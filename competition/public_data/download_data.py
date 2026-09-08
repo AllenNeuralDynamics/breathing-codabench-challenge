@@ -2,7 +2,7 @@ import argparse
 import subprocess
 from pathlib import Path
 
-S3_URI = "s3://aind-scratch-data/vr-foraging/breathing-codabench-challenge/TODO"
+S3_URI = "s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/9bd7d45e35cdfea74ae9c5897a336bb6dcc972288db862b523635ab5a397657a/public/"
 
 
 def main() -> None:
