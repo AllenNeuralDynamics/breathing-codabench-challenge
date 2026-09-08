@@ -62,7 +62,7 @@ the S3 path, directory structure, and file schema.
 ### 3. Explore the data
 
 ```bash
-uv run marimo edit baseline/notebooks/01_explore_data.py
+uv run marimo edit baseline-cnn-tcn/notebooks/01_explore_data.py
 ```
 
 See [Explore the data](competition/pages/overview.md#explore-the-data) for a
