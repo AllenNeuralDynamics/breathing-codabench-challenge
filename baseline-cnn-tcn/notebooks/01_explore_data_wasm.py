@@ -204,8 +204,9 @@ async def _(ET, http_get_str, mo, re, s3_prefix_input, urllib):
             _clip_map[_label] = _k
 
     clip_map = _clip_map
+    all_keys = _all_keys
     S3_BUCKET = _BUCKET
-    return S3_BUCKET, clip_map
+    return S3_BUCKET, all_keys, clip_map
 
 
 # ── Cell 5: clip selector ─────────────────────────────────────────────────────
