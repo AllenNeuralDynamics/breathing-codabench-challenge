@@ -265,6 +265,52 @@ def _(mo, np, therm):
     return
 
 
+# ── Cell 8: discover camera MP4s for the selected clip ───────────────────────
+@app.cell
+def _(S3_BUCKET, all_keys, re, therm_key):
+    _numeric = re.search(r"thermistor_(\d+_part_\d+)", therm_key)
+    _suffix  = _numeric.group(1) if _numeric else None
+    _parent  = therm_key.rsplit("/", 1)[0]
+    cam_map: dict[str, str] = {}
+    if _suffix:
+        for _k in all_keys:
+            _m = re.match(rf".*video_(.+)_{re.escape(_suffix)}\.mp4$", _k)
+            if _m and _k.startswith(_parent):
+                cam_map[_m.group(1)] = (
+                    f"https://{S3_BUCKET}.s3.amazonaws.com/{_k}"
+                )
+    return (cam_map,)
+
+
+# ── Cell 9a: camera selector (skipped if no video found) ─────────────────────
+@app.cell
+def _(cam_map, mo):
+    if not cam_map:
+        mo.stop(True, mo.callout(mo.md("No video files found for this clip."), kind="warn"))
+    cam_selector = mo.ui.dropdown(
+        options=list(cam_map.keys()),
+        value=next(iter(cam_map)),
+        label="Camera",
+    )
+    cam_selector
+    return (cam_selector,)
+
+
+# ── Cell 9b: video player ─────────────────────────────────────────────────────
+@app.cell
+def _(cam_map, cam_selector, mo):
+    _url = cam_map[cam_selector.value]
+    mo.Html(
+        f"""
+        <video src="{_url}" controls preload="metadata"
+               style="width:100%;max-height:420px;border-radius:6px;background:#000">
+          Your browser does not support the video tag.
+        </video>
+        """
+    )
+    return
+
+
 # ── Cell 10: extract raw arrays ──────────────────────────────────────────────
 @app.cell
 def _(np, therm):
