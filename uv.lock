@@ -67,11 +67,9 @@ name = "breathing-baseline"
 version = "0.1.0"
 source = { editable = "baseline" }
 dependencies = [
-    { name = "marimo" },
     { name = "matplotlib" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "opencv-python-headless" },
     { name = "pandas" },
     { name = "pyarrow" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -81,10 +79,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "marimo", specifier = ">=0.7" },
     { name = "matplotlib", specifier = ">=3.8" },
     { name = "numpy", specifier = ">=1.26" },
-    { name = "opencv-python-headless", specifier = ">=4.9" },
     { name = "pandas", specifier = ">=2.0" },
     { name = "pyarrow", specifier = ">=14.0" },
     { name = "scipy", specifier = ">=1.11" },
@@ -111,6 +107,7 @@ name = "breathing-cnn-tcn"
 version = "0.1.0"
 source = { editable = "baseline-cnn-tcn" }
 dependencies = [
+    { name = "marimo" },
     { name = "matplotlib" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -120,11 +117,16 @@ dependencies = [
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "scoring" },
+]
+
+[package.optional-dependencies]
+train = [
     { name = "torch" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "marimo", specifier = ">=0.7" },
     { name = "matplotlib", specifier = ">=3.8" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "opencv-python-headless", specifier = ">=4.9" },
@@ -132,8 +134,9 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=14.0" },
     { name = "scipy", specifier = ">=1.11" },
     { name = "scoring", editable = "scoring" },
-    { name = "torch", specifier = ">=2.6", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "torch", marker = "extra == 'train'", specifier = ">=2.6", index = "https://download.pytorch.org/whl/cu128" },
 ]
+provides-extras = ["train"]
 
 [[package]]
 name = "cffi"
