@@ -42,7 +42,7 @@ While not necessary, we will assume these are installed and available on your `P
 The data sits in a **public** S3 prefix — no AWS account or credentials needed.
 
 ```
-s3://aind-scratch-data/vr-foraging/breathing-codabench-challenge/TODO
+s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/9bd7d45e35cdfea74ae9c5897a336bb6dcc972288db862b523635ab5a397657a/public/
 ```
 
 ### Option 1 — download script
@@ -60,13 +60,13 @@ Useful when you want a subset. The full dataset is **~49 GB** (train ~21 GB,
 test ~28 GB), so grabbing a couple of clips first is usually the right move.
 
 ```bash
-S3=s3://aind-scratch-data/vr-foraging/breathing-codabench-challenge/demo/packaged
+S3=s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/9bd7d45e35cdfea74ae9c5897a336bb6dcc972288db862b523635ab5a397657a/public
 
 # Everything
-aws s3 sync --no-sign-request $S3/ ./data/packaged/
+aws s3 sync --no-sign-request $S3/ ./data/
 
 # Just the train split
-aws s3 sync --no-sign-request $S3/train/ ./data/packaged/train/
+aws s3 sync --no-sign-request $S3/train/ ./data/train/
 ```
 
 ---

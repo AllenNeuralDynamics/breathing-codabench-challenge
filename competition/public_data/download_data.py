@@ -2,7 +2,7 @@ import argparse
 import subprocess
 from pathlib import Path
 
-S3_URI = "s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/9bd7d45e35cdfea74ae9c5897a336bb6dcc972288db862b523635ab5a397657a/public/"
+from scoring.data import S3_PUBLIC_URI
 
 
 def main() -> None:
@@ -19,7 +19,7 @@ def main() -> None:
 
     args.dest.mkdir(parents=True, exist_ok=True)
     subprocess.run(
-        ["aws", "s3", "sync", "--no-sign-request", S3_URI, str(args.dest)],
+        ["aws", "s3", "sync", "--no-sign-request", S3_PUBLIC_URI, str(args.dest)],
         check=True,
     )
 

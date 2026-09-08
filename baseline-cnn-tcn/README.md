@@ -29,13 +29,13 @@ model's input shape.
 All commands run from the repo root.
 
 ```bash
-uv sync --all-packages
+uv sync --all-packages --extra train
 ```
 
 **1. Data** (~11 GiB, public bucket, no credentials).
 
 ```bash
-aws s3 sync --no-sign-request s3://aind-scratch-data/vr-foraging/breathing-codabench-challenge/demo/packaged/train/ data/packaged/train/
+aws s3 sync --no-sign-request s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/9bd7d45e35cdfea74ae9c5897a336bb6dcc972288db862b523635ab5a397657a/public/train/ data/train/
 ```
 
 **2. Crop boxes** ship with the repo as `baseline-cnn-tcn/artifacts/session_boxes_face.json`.

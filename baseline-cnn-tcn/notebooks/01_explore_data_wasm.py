@@ -141,6 +141,8 @@ def _(mo):
 # ── Cell 3: S3 prefix (hardcoded) ─────────────────────────────────────────────
 @app.cell(hide_code=True)
 def _():
+    # Pyodide can't import workspace packages, so this must be kept in sync by
+    # hand with scoring.data.S3_BUCKET / S3_PUBLIC_PREFIX.
     import types
     s3_prefix_input = types.SimpleNamespace(
         value=(

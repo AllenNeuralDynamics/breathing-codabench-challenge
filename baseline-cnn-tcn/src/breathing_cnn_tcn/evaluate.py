@@ -113,7 +113,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Score checkpoints on held-out clips.")
     parser.add_argument("--checkpoint", type=Path, nargs="+", required=True)
     parser.add_argument("--features-dir", type=Path, default=Path("data/features"))
-    parser.add_argument("--packaged-root", type=Path, default=Path("data/packaged"))
+    parser.add_argument("--packaged-root", type=Path, default=Path("data"))
     parser.add_argument("--split", default=PUBLIC_SPLIT)
     parser.add_argument("--camera", default="face", choices=["face", "side"])
     parser.add_argument(
