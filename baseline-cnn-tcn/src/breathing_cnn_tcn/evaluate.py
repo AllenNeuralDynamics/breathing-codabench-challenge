@@ -7,7 +7,8 @@ Anything less faithful would report a number the leaderboard will not reproduce.
 
 What this is for
 ----------------
-The reserved sessions in ``artifacts/holdout_sessions.json`` are the only clips
+The reserved sessions in ``baseline-cnn-tcn/artifacts/holdout_sessions.json``
+are the only clips
 nothing trained on, validated on, or selected a checkpoint against, so they are
 the one unbiased estimate available locally.  That also makes them consumable:
 every look influences what gets tried next, so the estimate degrades with reuse.
@@ -116,7 +117,9 @@ def main() -> None:
     parser.add_argument("--split", default=PUBLIC_SPLIT)
     parser.add_argument("--camera", default="face", choices=["face", "side"])
     parser.add_argument(
-        "--holdout-json", type=Path, default=Path("artifacts/holdout_sessions.json")
+        "--holdout-json",
+        type=Path,
+        default=Path("baseline-cnn-tcn/artifacts/holdout_sessions.json"),
     )
     parser.add_argument(
         "--sessions",
