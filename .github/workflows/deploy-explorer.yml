@@ -1,0 +1,50 @@
+name: Deploy Clip Explorer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "baseline-cnn-tcn/notebooks/01_explore_data_wasm.py"
+      - ".github/workflows/deploy-explorer.yml"
+  workflow_dispatch:          # let maintainers trigger it manually
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          version: "latest"
+
+      - name: Export marimo notebook → WASM HTML
+        run: |
+          uv run marimo export html-wasm \
+            baseline-cnn-tcn/notebooks/01_explore_data_wasm.py \
+            -o site/index.html --mode run
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
