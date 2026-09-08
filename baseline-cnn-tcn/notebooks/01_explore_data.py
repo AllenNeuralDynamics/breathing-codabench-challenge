@@ -18,9 +18,7 @@ def _():
     import numpy as np
     import pandas as pd
 
-    # utils.py lives next to this notebook and provides the same signal-processing
-    # functions as scoring.processing, but without the dtaidistance C-extension dep.
-    from utils import (
+    from scoring.processing import (
         CANONICAL_BREATHING_SAMPLING_RATE,
         detect_breathing_events,
         filter_sniff_signal,
