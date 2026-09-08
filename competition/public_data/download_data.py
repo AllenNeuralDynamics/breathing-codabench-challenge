@@ -1,0 +1,30 @@
+import argparse
+import subprocess
+from pathlib import Path
+
+S3_URI = (
+    "s3://aind-scratch-data/vr-foraging/breathing-codabench-challenge/TODO"
+)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Download packaged competition data from S3."
+    )
+    parser.add_argument(
+        "--dest",
+        type=Path,
+        default=Path("./data"),
+        help="Destination directory (default: ./data)",
+    )
+    args = parser.parse_args()
+
+    args.dest.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["aws", "s3", "sync", "--no-sign-request", S3_URI, str(args.dest)],
+        check=True,
+    )
+
+
+if __name__ == "__main__":
+    main()
