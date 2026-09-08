@@ -695,7 +695,7 @@ def rate_breakdown(
     print("\n% of ground-truth breaths detected, by frequency bin (n breaths)")
     header = (
         f"{'bin (Hz)':<13s}"
-        + "".join(f"{str(s):>16s}" for s in sessions)
+        + "".join(f"{s!s:>16s}" for s in sessions)
         + f"{'pooled':>16s}"
     )
     print(header)
