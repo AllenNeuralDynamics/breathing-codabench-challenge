@@ -8,10 +8,8 @@ dependencies = [
     "numpy>=1.26",
     "pandas>=2.0",
     "pyarrow>=14.0",
-    "opencv-python-headless>=4.9",
     "scipy>=1.11",
     "matplotlib>=3.8",
-    "marimo>=0.7",
 ]
 
 [tool.uv.sources]
