@@ -9,7 +9,6 @@ WORKDIR /app
 COPY pyproject.toml .
 RUN uv pip install --system -e ".[dev]"
 
-# Copy source
 COPY . .
 
 ENTRYPOINT ["python", "/app/score.py"]

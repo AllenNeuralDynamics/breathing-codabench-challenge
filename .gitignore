@@ -46,3 +46,6 @@ docs/
 
 # Created artifacts
 runs*/*
+
+# env files
+*.env

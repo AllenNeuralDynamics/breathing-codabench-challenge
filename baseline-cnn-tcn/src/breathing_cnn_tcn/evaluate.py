@@ -37,7 +37,7 @@ import numpy as np
 import pandas as pd
 import torch
 from scoring.metrics import score_clip
-from scoring.processing import ADC_VOLTAGE_COLUMN, TIME_COLUMN
+from scoring.processing import BREATHING_SIGNAL_COLUMN, TIME_COLUMN
 
 from .clips import PUBLIC_SPLIT
 from .dataset import ClipEntry, load_manifest
@@ -104,8 +104,8 @@ def truth_frame(packaged_root: Path, split: str, session_idx: int, part: int):
     """Raw thermistor trace, renamed to the columns ``score_clip`` expects."""
     path = packaged_root / split / f"thermistor_{session_idx}_part_{part}.parquet"
     frame = pd.read_parquet(path)
-    return frame.rename(columns={"Time": TIME_COLUMN, "Signal": ADC_VOLTAGE_COLUMN})[
-        [TIME_COLUMN, ADC_VOLTAGE_COLUMN]
+    return frame.rename(columns={"Time": TIME_COLUMN, "Signal": BREATHING_SIGNAL_COLUMN})[
+        [TIME_COLUMN, BREATHING_SIGNAL_COLUMN]
     ]
 
 
@@ -226,7 +226,7 @@ def main() -> None:
         predicted = pd.DataFrame(
             {
                 TIME_COLUMN: times.astype(np.float64),
-                ADC_VOLTAGE_COLUMN: signal.astype(np.float64),
+                BREATHING_SIGNAL_COLUMN: signal.astype(np.float64),
             }
         )
         truth = truth_frame(
@@ -256,7 +256,6 @@ def main() -> None:
         "exhale_f1",
         "inhale_timing_mae_s",
         "kl_ibi",
-        "rmse_canonical_hz",
     ):
         values = np.array([r[field] for r in rows], dtype=float)
         values = values[np.isfinite(values)]

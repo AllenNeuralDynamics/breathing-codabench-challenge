@@ -21,7 +21,6 @@ The data schema, download instructions, and worked examples for participants liv
     - [5. Score locally](#5-score-locally)
     - [6. Package and submit](#6-package-and-submit)
 - [TODO/TBD](#todotbd)
-- [TODO/TBD](#todotbd-1)
   - [For organizers / developers](#for-organizers--developers)
     - [Scoring program](#scoring-program)
     - [CI / CD](#ci--cd)
@@ -110,15 +109,35 @@ Then upload `submission.zip` on the [Codabench competition page](https://www.cod
 
 **Submission format:**
 
-# TODO/TBD
+File names mirror the packaged dataset's own
+`{stream}_{session}_part_{part}.parquet` convention (see
+[`clips.py`](baseline-cnn-tcn/src/breathing_cnn_tcn/clips.py)) — `clip_id`
+below is `{session}_part_{part}`, e.g. `2_part_1`:
 
-```
+```text
 submission.zip
-├── {clip_id}.parquet    # columns: time (float64), adc_voltage (float64)
+├── thermistor_{clip_id}.parquet      # required: columns time (float64), breathing_signal (float64)
+├── inhale_times_{clip_id}.parquet    # optional: column time_s (float64)
+├── exhale_times_{clip_id}.parquet    # optional: column time_s (float64)
 └── ...
 ```
 
-One parquet per clip, named by clip ID. Missing clips are skipped with a warning.
+`thermistor_{clip_id}.parquet` is the predicted breathing trace (any
+sampling rate; resampled onto the canonical 60 Hz grid before scoring).
+`breathing_signal` is an arbitrary-unit waveform, not a calibrated ADC
+voltage.
+
+`inhale_times_{clip_id}.parquet` / `exhale_times_{clip_id}.parquet` let you
+submit onset/offset times directly (e.g. from a model with a dedicated event
+head) instead of relying on peak-detection over the thermistor file. Each is
+optional and scored independently — no requirement to submit both, or for
+counts to match; real breathing isn't a strict alternation of the two
+(breath holds, apnea, sniffing bursts). See
+[`scoring/src/scoring/validation.py`](scoring/src/scoring/validation.py) for
+the exact schema checks.
+
+Clips are discovered from `thermistor_*.parquet`; a clip missing that
+required file is skipped with a warning.
 
 ---
 
@@ -139,11 +158,12 @@ To test it locally:
 ```bash
 cd scoring
 uv sync
+cp .env.example .env   # fill in GROUND_TRUTH_S3_URI
 
 # Simulate a Codabench scoring run
 mkdir -p /tmp/test_input/res /tmp/test_output
 cp path/to/predictions/*.parquet /tmp/test_input/res/
-uv run python score.py /tmp/test_input /tmp/test_output
+uv run --env-file .env python score.py /tmp/test_input /tmp/test_output
 cat /tmp/test_output/scores.json
 ```
 

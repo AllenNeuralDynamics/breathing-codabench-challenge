@@ -79,8 +79,12 @@ resolution regardless of its native rate.
 TIME_COLUMN = "time"
 """Time column name in the clip parquet files (seconds)."""
 
-ADC_VOLTAGE_COLUMN = "adc_voltage"
-"""Thermistor ADC voltage column name in the clip parquet files."""
+BREATHING_SIGNAL_COLUMN = "breathing_signal"
+"""Breathing-signal column name in the clip parquet files.
+
+An arbitrary-unit waveform, not a calibrated ADC voltage -- a video-derived
+prediction has no way to land on the thermistor's actual scale.
+"""
 
 
 def resample_uniform(
@@ -98,7 +102,7 @@ def resample_uniform(
     thermistor:
         Input dataframe as extracted from a clip parquet.  Must contain the
         parquet schema columns ``time`` (seconds, monotonically increasing)
-        and ``adc_voltage``.
+        and ``breathing_signal``.
     target_fs:
         Target sampling rate in Hz.  Default ``CANONICAL_BREATHING_SAMPLING_RATE``
         (the canonical scoring grid).
@@ -108,17 +112,17 @@ def resample_uniform(
     pd.DataFrame
         New dataframe with the same two columns, where ``time`` is a
         uniform grid ``t[0], t[0]+1/target_fs, ...`` spanning the input range
-        and ``adc_voltage`` is linearly interpolated onto that grid.
+        and ``breathing_signal`` is linearly interpolated onto that grid.
     """
     t = thermistor[TIME_COLUMN].to_numpy(dtype=float)
-    v = thermistor[ADC_VOLTAGE_COLUMN].to_numpy(dtype=float)
+    v = thermistor[BREATHING_SIGNAL_COLUMN].to_numpy(dtype=float)
 
     t_uniform = np.arange(t[0], t[-1], 1.0 / target_fs)
     interp_fn = interp1d(
         t, v, kind="linear", bounds_error=False, fill_value="extrapolate"
     )
     return pd.DataFrame(
-        {TIME_COLUMN: t_uniform, ADC_VOLTAGE_COLUMN: interp_fn(t_uniform)}
+        {TIME_COLUMN: t_uniform, BREATHING_SIGNAL_COLUMN: interp_fn(t_uniform)}
     )
 
 
