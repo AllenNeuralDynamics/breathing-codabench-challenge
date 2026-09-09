@@ -1,4 +1,4 @@
-# Run from the repo root (data lives in ./data/packaged):
+# Run from the repo root (data lives in ./data):
 #  uv run marimo edit baseline-cnn-tcn/notebooks/01_explore_data.py
 
 import marimo
@@ -59,7 +59,7 @@ def _(mo):
 @app.cell
 def _(mo):
     data_dir_input = mo.ui.text(
-        value="./data/packaged",
+        value="./data",
         label="Packaged data root  (`{root}/{split}/thermistor_*.parquet`)",
         full_width=True,
     )
