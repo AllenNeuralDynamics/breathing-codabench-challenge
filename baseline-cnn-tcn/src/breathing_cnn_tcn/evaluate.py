@@ -141,7 +141,13 @@ def main() -> None:
         "(see .plot_diagnosis) into --plot-dir.  Needs exactly one --checkpoint: "
         "the reserved-grid panel reads one model's own onset head.",
     )
-    parser.add_argument("--plot-dir", type=Path, default=Path("artifacts/plots"))
+    parser.add_argument(
+        "--plot-dir",
+        type=Path,
+        help="Where the diagnostic plots land. Defaults to a `diagnosis/` "
+        "folder next to the checkpoint being scored, so plots from different "
+        "runs never collide or need telling apart by filename.",
+    )
     parser.add_argument("--grid-window", type=int, default=512)
     parser.add_argument("--corr-window-s", type=float, default=3.0)
     parser.add_argument("--corr-hop-s", type=float, default=1.5)
@@ -289,12 +295,15 @@ def main() -> None:
         print(f"wrote {args.out}")
 
     if args.plot:
-        args.plot_dir.mkdir(parents=True, exist_ok=True)
+        # --plot requires exactly one --checkpoint (checked above), so its
+        # parent is unambiguously the run directory this checkpoint lives in.
+        plot_dir = args.plot_dir or (args.checkpoint[0].parent / "diagnosis")
+        plot_dir.mkdir(parents=True, exist_ok=True)
         title_suffix = args.checkpoint[0].parent.name
         rate_breakdown(
             plot_data,
             sorted(sessions),
-            args.plot_dir / "rate_breakdown.png",
+            plot_dir / "rate_breakdown.png",
             title_suffix,
             n_shifts=args.null_shifts,
             corr_window_s=args.corr_window_s,
@@ -309,12 +318,13 @@ def main() -> None:
             device,
             entries,
             sorted(sessions),
-            args.plot_dir / "reserved_grid.png",
+            plot_dir / "reserved_grid.png",
             window=args.grid_window,
             infer_window=args.infer_window,
             frame_chunk=args.frame_chunk,
             amp_dtype=amp_dtype,
         )
+        print(f"wrote diagnostic plots -> {plot_dir}")
 
 
 if __name__ == "__main__":
