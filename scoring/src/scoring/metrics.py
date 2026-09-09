@@ -21,8 +21,9 @@ from scipy.optimize import linear_sum_assignment
 from scipy.signal import correlate, correlation_lags
 
 from scoring.processing import (
-    ADC_VOLTAGE_COLUMN,
+    BREATHING_SIGNAL_COLUMN,
     CANONICAL_BREATHING_SAMPLING_RATE,
+    TIME_COLUMN,
     detect_inhalation_events,
     resample_uniform,
 )
@@ -64,14 +65,6 @@ class Score:
     Positive → prediction leads ground truth.
     Negative → prediction lags ground truth.
     Closer to 0 is better.
-    """
-
-    rmse_canonical_hz: float
-    """Root-mean-square error between GT and prediction after both are
-    resampled to the canonical scoring rate
-    (``CANONICAL_BREATHING_SAMPLING_RATE``).
-
-    Lower is better.
     """
 
     # ------------------------------------------------------------------
@@ -286,11 +279,6 @@ def max_cross_correlation(
     return float(xcorr[peak_idx]), float(lags[peak_idx] / fs)
 
 
-def rmse(truth: np.ndarray, predicted: np.ndarray) -> float:
-    """Root-mean-square error between two equal-length signals."""
-    return float(np.sqrt(np.mean((truth - predicted) ** 2)))
-
-
 # ---------------------------------------------------------------------------
 # Rhythm metrics
 # ---------------------------------------------------------------------------
@@ -338,21 +326,31 @@ def score_clip(
     truth_thermistor: pd.DataFrame,
     predicted_thermistor: pd.DataFrame,
     *,
+    truth_onset_times_s: np.ndarray | None = None,
+    truth_offset_times_s: np.ndarray | None = None,
+    predicted_onset_times_s: np.ndarray | None = None,
+    predicted_offset_times_s: np.ndarray | None = None,
     tolerance_s: float = EVENT_TOLERANCE_S,
 ) -> Score:
     """Compute all metrics for one clip and assemble a :class:`Score`.
 
-    The thermistor rate varies across recordings, so both signals are
-    resampled onto the canonical scoring grid
+    Both signals are resampled onto the canonical scoring grid
     (``CANONICAL_BREATHING_SAMPLING_RATE``) before any metric is computed.
-    Every clip is scored at an identical temporal resolution, and predictions
-    submitted at any rate are handled uniformly.
 
     Parameters
     ----------
     truth_thermistor, predicted_thermistor:
-        Clip dataframes as extracted from parquet, with columns ``time``
-        and ``adc_voltage``.
+        Clip dataframes with columns ``Time`` and ``Signal``.
+    truth_onset_times_s, truth_offset_times_s, predicted_onset_times_s,
+    predicted_offset_times_s:
+        Overrides, independent of each other; any omitted here are detected
+        from the resampled signal via
+        :func:`~scoring.processing.detect_inhalation_events`. Onsets and
+        offsets need not pair up or match in count. Truth is never
+        submitted, so it's always auto-detected in practice; a real
+        submission must supply both predicted times explicitly (see
+        ``score.py`` / ``scoring.validation``) -- the omit-and-auto-detect
+        path for predictions exists here for library/local-testing use.
     tolerance_s:
         Event-matching tolerance passed to the event metrics.
 
@@ -364,28 +362,56 @@ def score_clip(
     fs = CANONICAL_BREATHING_SAMPLING_RATE
 
     # Resample both signals onto the canonical scoring grid
-    truth = resample_uniform(truth_thermistor)[ADC_VOLTAGE_COLUMN].to_numpy()
-    predicted = resample_uniform(predicted_thermistor)[ADC_VOLTAGE_COLUMN].to_numpy()
+    truth_resampled = resample_uniform(truth_thermistor)
+    truth = truth_resampled[BREATHING_SIGNAL_COLUMN].to_numpy()
+    truth_time = truth_resampled[TIME_COLUMN].to_numpy()
+    predicted_resampled = resample_uniform(predicted_thermistor)
+    predicted = predicted_resampled[BREATHING_SIGNAL_COLUMN].to_numpy()
+    predicted_time = predicted_resampled[TIME_COLUMN].to_numpy()
 
     # Truncate to shortest length (defensive)
     n = min(len(truth), len(predicted))
     truth, predicted = truth[:n], predicted[:n]
+    truth_time, predicted_time = truth_time[:n], predicted_time[:n]
 
     # ── Signal-level ─────────────────────────────────────────────────────
     xcorr_peak, xcorr_delay = max_cross_correlation(truth, predicted, fs)
-    rmse_canonical = rmse(truth, predicted)
 
     # ── Events ───────────────────────────────────────────────────────────
-    truth_on, truth_off = detect_inhalation_events(truth, fs)
-    predicted_on, predicted_off = detect_inhalation_events(predicted, fs)
+    # Defaults for whichever side/type isn't overridden below. Indices are
+    # converted through the resampled Time column, not `index / fs` -- a
+    # clip's Time axis need not start at 0 (side-camera clips can start
+    # around Time = -1s), so that would silently misalign against an
+    # explicitly-submitted (real Time-based) side.
+    truth_on_default, truth_off_default = detect_inhalation_events(truth, fs)
+    predicted_on_default, predicted_off_default = detect_inhalation_events(
+        predicted, fs
+    )
 
-    truth_on_s, truth_off_s = truth_on / fs, truth_off / fs
-    predicted_on_s, predicted_off_s = predicted_on / fs, predicted_off / fs
+    truth_on_s = (
+        truth_onset_times_s
+        if truth_onset_times_s is not None
+        else truth_time[truth_on_default]
+    )
+    truth_off_s = (
+        truth_offset_times_s
+        if truth_offset_times_s is not None
+        else truth_time[truth_off_default]
+    )
+    predicted_on_s = (
+        predicted_onset_times_s
+        if predicted_onset_times_s is not None
+        else predicted_time[predicted_on_default]
+    )
+    predicted_off_s = (
+        predicted_offset_times_s
+        if predicted_offset_times_s is not None
+        else predicted_time[predicted_off_default]
+    )
 
     return Score(
         max_xcorr=xcorr_peak,
         xcorr_delay_s=xcorr_delay,
-        rmse_canonical_hz=rmse_canonical,
         inhale_f1=event_f1(truth_on_s, predicted_on_s, tolerance_s),
         exhale_f1=event_f1(truth_off_s, predicted_off_s, tolerance_s),
         inhale_timing_mae_s=event_timing_mae(truth_on_s, predicted_on_s, tolerance_s),

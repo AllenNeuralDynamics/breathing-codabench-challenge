@@ -46,3 +46,7 @@ docs/
 
 # Created artifacts
 runs*/*
+submission/*
+
+# env files
+*.env

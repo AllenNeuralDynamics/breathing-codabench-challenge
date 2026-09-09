@@ -5,11 +5,12 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-# Install dependencies (cached layer)
-COPY pyproject.toml .
-RUN uv pip install --system -e ".[dev]"
+# Build context is the repo root
 
-# Copy source
 COPY . .
+RUN uv sync --package scoring --no-dev --frozen --no-cache
 
-ENTRYPOINT ["python", "/app/score.py"]
+ENV PATH="/app/.venv/bin:$PATH"
+
+ENTRYPOINT ["python", "/app/scoring/score.py"]
+CMD ["/input", "/output"]

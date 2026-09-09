@@ -46,7 +46,7 @@ from scipy.interpolate import interp1d
 from scipy.signal import find_peaks
 from scoring.metrics import EVENT_TOLERANCE_S, match_events
 from scoring.processing import (
-    ADC_VOLTAGE_COLUMN,
+    BREATHING_SIGNAL_COLUMN,
     CANONICAL_BREATHING_SAMPLING_RATE,
     TIME_COLUMN,
     detect_inhalation_events,
@@ -107,12 +107,12 @@ def canonical_clip(
     """
     grid = resample_uniform(truth)
     times = grid[TIME_COLUMN].to_numpy()
-    raw = grid[ADC_VOLTAGE_COLUMN].to_numpy()
+    raw = grid[BREATHING_SIGNAL_COLUMN].to_numpy()
 
     # filter_sniff_signal's 40 Hz corner is above the 60 Hz grid's Nyquist, so
     # it has to be applied at the thermistor's native rate and resampled after.
     t_native = truth[TIME_COLUMN].to_numpy(dtype=float)
-    v_native = truth[ADC_VOLTAGE_COLUMN].to_numpy(dtype=float)
+    v_native = truth[BREATHING_SIGNAL_COLUMN].to_numpy(dtype=float)
     native_fs = 1.0 / float(np.median(np.diff(t_native)))
     t_uniform = np.arange(t_native[0], t_native[-1], 1.0 / native_fs)
     filtered = filter_sniff_signal(np.interp(t_uniform, t_native, v_native), native_fs)
