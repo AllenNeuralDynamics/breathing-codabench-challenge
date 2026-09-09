@@ -1,6 +1,6 @@
 [project]
 name = "breathing-cnn-tcn"
-version = "0.1.0"
+dynamic = ["version"]
 description = "CNN + TCN baseline for the breathing-from-video challenge"
 requires-python = ">=3.11"
 dependencies = [
@@ -22,8 +22,12 @@ scoring = { workspace = true }
 torch = { index = "pytorch-cu128" }
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/breathing_cnn_tcn"]
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { root = ".." }

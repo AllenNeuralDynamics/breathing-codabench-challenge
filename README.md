@@ -20,7 +20,6 @@ The data schema, download instructions, and worked examples for participants liv
     - [4. Run a baseline](#4-run-a-baseline)
     - [5. Score locally](#5-score-locally)
     - [6. Package and submit](#6-package-and-submit)
-- [TODO/TBD](#todotbd)
   - [For organizers / developers](#for-organizers--developers)
     - [Scoring program](#scoring-program)
     - [CI / CD](#ci--cd)
@@ -103,13 +102,13 @@ current participant-facing docs.
 
 ### 6. Package and submit
 
-# TODO/TBD
-
+`baseline-cnn-tcn`'s [`submit.py`](baseline-cnn-tcn/src/breathing_cnn_tcn/submit.py)
+packages a checkpoint's predictions into the submission format (private
+split must already be preprocessed, see its module docstring):
 
 ```bash
-uv run python -m breathing_baseline.predict \
-    --video-dir ./data/test \
-    --out ./submission.zip
+uv run python -m breathing_cnn_tcn.submit --checkpoint runs/<run>/best.pt
+cd submission/<run> && zip -r ../submission.zip res
 ```
 
 Then upload `submission.zip` on the [Codabench competition page](https://www.codabench.org/competitions/9975/).
@@ -167,8 +166,8 @@ every participant submission (image reference in
 2. Fetches ground-truth parquets from S3
 3. Computes all metrics and writes `$output/scores.json` (+ per-clip detail)
 
-The image is built and pushed to GHCR on every GitHub release (semver +
-`latest` tags, see [CI / CD](#ci--cd) below) -- see
+The image is built and pushed to GHCR on every GitHub release (tagged to
+match the release exactly, plus `latest`, see [CI / CD](#ci--cd) below) -- see
 [`scoring/README.md`](scoring/README.md) for how to pull and run it directly
 (the volume/env-var contract, PowerShell examples, etc.), which is also the
 most faithful way to reproduce a Codabench score locally.
@@ -189,10 +188,10 @@ cat /tmp/test_output/scores.json
 
 ### CI / CD
 
-| Workflow           | Trigger                   | What it does                                                                             |
-| ------------------ | ------------------------- | ---------------------------------------------------------------------------------------- |
-| `ci.yml`           | Every PR / push to `main` | `uv sync` + `ruff check .` across the whole workspace                                    |
-| `build-images.yml` | GitHub release published  | Builds `scoring/Dockerfile`, pushes to `ghcr.io/{repo}/scoring` (semver + `latest` tags) |
+| Workflow           | Trigger                   | What it does                                                                                                |
+| ------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `ci.yml`           | Every PR / push to `main` | `uv sync` + `ruff check .` across the whole workspace                                                        |
+| `build-images.yml` | GitHub release published  | Builds `scoring/Dockerfile`, pushes to `ghcr.io/{repo}/scoring` (tagged to match the release, plus `latest`) |
 
 The image tag Codabench pulls is set by `container_image` in
 `competition.yaml` — after cutting a release, check it still points at the tag

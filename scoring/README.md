@@ -6,8 +6,8 @@ The Codabench scoring program for the Breathing from Video Challenge.
 
 ```bash
 docker pull ghcr.io/allenneuraldynamics/breathing-codabench-challenge/scoring:latest
-# or a pinned version:
-docker pull ghcr.io/allenneuraldynamics/breathing-codabench-challenge/scoring:1.2.0
+# or a pinned release (tag matches the GitHub release exactly, e.g. v0.0.0rc0):
+docker pull ghcr.io/allenneuraldynamics/breathing-codabench-challenge/scoring:v0.0.0rc0
 ```
 
 Or build it locally (from the repo root, so the build sees `uv.lock`):
