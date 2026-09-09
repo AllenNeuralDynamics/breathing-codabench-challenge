@@ -43,3 +43,6 @@ __marimo__/
 # Downloaded dataset (populated by download_data.py)
 data/
 docs/
+
+# Created artifacts
+runs*/*
