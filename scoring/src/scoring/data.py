@@ -37,7 +37,7 @@ def ground_truth_s3_location() -> tuple[str, str]:
             f"{GROUND_TRUTH_S3_URI_ENV_VAR} is not set. Copy "
             "scoring/.env.example to scoring/.env, then run with "
             "`uv run --env-file scoring/.env ...` (or set the environment "
-            "variable directly) -- e.g. s3://aind-scratch-data/.../private"
+            "variable directly) -- e.g. s3://bucket/folder"
         )
     parsed = urlparse(uri)
     if parsed.scheme != "s3" or not parsed.netloc:

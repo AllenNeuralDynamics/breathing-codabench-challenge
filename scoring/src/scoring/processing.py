@@ -76,14 +76,12 @@ computed.  Every clip is therefore scored at an identical temporal
 resolution regardless of its native rate.
 """
 
-TIME_COLUMN = "time"
-"""Time column name in the clip parquet files (seconds)."""
+TIME_COLUMN = "Time"
+"""Time column name in the clip parquet files (seconds).
+"""
 
-BREATHING_SIGNAL_COLUMN = "breathing_signal"
+BREATHING_SIGNAL_COLUMN = "Signal"
 """Breathing-signal column name in the clip parquet files.
-
-An arbitrary-unit waveform, not a calibrated ADC voltage -- a video-derived
-prediction has no way to land on the thermistor's actual scale.
 """
 
 
@@ -101,8 +99,8 @@ def resample_uniform(
     ----------
     thermistor:
         Input dataframe as extracted from a clip parquet.  Must contain the
-        parquet schema columns ``time`` (seconds, monotonically increasing)
-        and ``breathing_signal``.
+        parquet schema columns ``Time`` (seconds, monotonically increasing)
+        and ``Signal``.
     target_fs:
         Target sampling rate in Hz.  Default ``CANONICAL_BREATHING_SAMPLING_RATE``
         (the canonical scoring grid).
@@ -110,9 +108,9 @@ def resample_uniform(
     Returns
     -------
     pd.DataFrame
-        New dataframe with the same two columns, where ``time`` is a
+        New dataframe with the same two columns, where ``Time`` is a
         uniform grid ``t[0], t[0]+1/target_fs, ...`` spanning the input range
-        and ``breathing_signal`` is linearly interpolated onto that grid.
+        and ``Signal`` is linearly interpolated onto that grid.
     """
     t = thermistor[TIME_COLUMN].to_numpy(dtype=float)
     v = thermistor[BREATHING_SIGNAL_COLUMN].to_numpy(dtype=float)

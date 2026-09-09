@@ -101,12 +101,9 @@ def predict_entry(
 
 
 def truth_frame(packaged_root: Path, split: str, session_idx: int, part: int):
-    """Raw thermistor trace, renamed to the columns ``score_clip`` expects."""
+    """Raw thermistor trace -- already the columns ``score_clip`` expects."""
     path = packaged_root / split / f"thermistor_{session_idx}_part_{part}.parquet"
-    frame = pd.read_parquet(path)
-    return frame.rename(columns={"Time": TIME_COLUMN, "Signal": BREATHING_SIGNAL_COLUMN})[
-        [TIME_COLUMN, BREATHING_SIGNAL_COLUMN]
-    ]
+    return pd.read_parquet(path)
 
 
 def main() -> None:

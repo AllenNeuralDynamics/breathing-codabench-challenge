@@ -47,9 +47,6 @@ async def http_get_str(url: str) -> str:
 
 
 # ── Signal processing ──────────────────────────────────────────────────────────
-# Inlined from scoring.processing to avoid the dtaidistance C-extension dep
-# (which is not available in Pyodide).
-
 
 def filter_sniff_signal(values: np.ndarray, fs: float) -> np.ndarray:
     """0.2 Hz high-pass + 40 Hz low-pass Butterworth pipeline."""

@@ -23,6 +23,7 @@ from scipy.signal import correlate, correlation_lags
 from scoring.processing import (
     BREATHING_SIGNAL_COLUMN,
     CANONICAL_BREATHING_SAMPLING_RATE,
+    TIME_COLUMN,
     detect_inhalation_events,
     resample_uniform,
 )
@@ -339,13 +340,17 @@ def score_clip(
     Parameters
     ----------
     truth_thermistor, predicted_thermistor:
-        Clip dataframes with columns ``time`` and ``breathing_signal``.
+        Clip dataframes with columns ``Time`` and ``Signal``.
     truth_onset_times_s, truth_offset_times_s, predicted_onset_times_s,
     predicted_offset_times_s:
-        Optional overrides, independent of each other. Any that are omitted
-        are detected from the resampled signal via
+        Overrides, independent of each other; any omitted here are detected
+        from the resampled signal via
         :func:`~scoring.processing.detect_inhalation_events`. Onsets and
-        offsets need not pair up or match in count.
+        offsets need not pair up or match in count. Truth is never
+        submitted, so it's always auto-detected in practice; a real
+        submission must supply both predicted times explicitly (see
+        ``score.py`` / ``scoring.validation``) -- the omit-and-auto-detect
+        path for predictions exists here for library/local-testing use.
     tolerance_s:
         Event-matching tolerance passed to the event metrics.
 
@@ -357,20 +362,27 @@ def score_clip(
     fs = CANONICAL_BREATHING_SAMPLING_RATE
 
     # Resample both signals onto the canonical scoring grid
-    truth = resample_uniform(truth_thermistor)[BREATHING_SIGNAL_COLUMN]
-    truth = truth.to_numpy()
-    predicted = resample_uniform(predicted_thermistor)[BREATHING_SIGNAL_COLUMN]
-    predicted = predicted.to_numpy()
+    truth_resampled = resample_uniform(truth_thermistor)
+    truth = truth_resampled[BREATHING_SIGNAL_COLUMN].to_numpy()
+    truth_time = truth_resampled[TIME_COLUMN].to_numpy()
+    predicted_resampled = resample_uniform(predicted_thermistor)
+    predicted = predicted_resampled[BREATHING_SIGNAL_COLUMN].to_numpy()
+    predicted_time = predicted_resampled[TIME_COLUMN].to_numpy()
 
     # Truncate to shortest length (defensive)
     n = min(len(truth), len(predicted))
     truth, predicted = truth[:n], predicted[:n]
+    truth_time, predicted_time = truth_time[:n], predicted_time[:n]
 
     # ── Signal-level ─────────────────────────────────────────────────────
     xcorr_peak, xcorr_delay = max_cross_correlation(truth, predicted, fs)
 
     # ── Events ───────────────────────────────────────────────────────────
-    # Defaults for whichever side/type isn't overridden below.
+    # Defaults for whichever side/type isn't overridden below. Indices are
+    # converted through the resampled Time column, not `index / fs` -- a
+    # clip's Time axis need not start at 0 (side-camera clips can start
+    # around Time = -1s), so that would silently misalign against an
+    # explicitly-submitted (real Time-based) side.
     truth_on_default, truth_off_default = detect_inhalation_events(truth, fs)
     predicted_on_default, predicted_off_default = detect_inhalation_events(
         predicted, fs
@@ -379,22 +391,22 @@ def score_clip(
     truth_on_s = (
         truth_onset_times_s
         if truth_onset_times_s is not None
-        else truth_on_default / fs
+        else truth_time[truth_on_default]
     )
     truth_off_s = (
         truth_offset_times_s
         if truth_offset_times_s is not None
-        else truth_off_default / fs
+        else truth_time[truth_off_default]
     )
     predicted_on_s = (
         predicted_onset_times_s
         if predicted_onset_times_s is not None
-        else predicted_on_default / fs
+        else predicted_time[predicted_on_default]
     )
     predicted_off_s = (
         predicted_offset_times_s
         if predicted_offset_times_s is not None
-        else predicted_off_default / fs
+        else predicted_time[predicted_off_default]
     )
 
     return Score(

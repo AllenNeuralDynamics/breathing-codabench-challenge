@@ -81,6 +81,13 @@ Each README covers its own setup, training/inference, and Docker image.
 
 ### 5. Score locally
 
+Before scoring, check your submission's file format is correct with no
+ground truth or network access needed:
+
+```bash
+uv run scoring/validate_submission.py path/to/submission
+```
+
 [`scoring/score.py`](scoring/score.py) is the exact entrypoint Codabench runs:
 it fetches ground-truth parquets from S3 and scores each submitted clip with
 `scoring.metrics.score_clip`. That same function is what to score against
@@ -112,32 +119,39 @@ Then upload `submission.zip` on the [Codabench competition page](https://www.cod
 File names mirror the packaged dataset's own
 `{stream}_{session}_part_{part}.parquet` convention (see
 [`clips.py`](baseline-cnn-tcn/src/breathing_cnn_tcn/clips.py)) — `clip_id`
-below is `{session}_part_{part}`, e.g. `2_part_1`:
+below is `{session}_part_{part}`, e.g. `2_part_1`. **All three files are
+required for every clip you want scored:**
 
 ```text
 submission.zip
-├── thermistor_{clip_id}.parquet      # required: columns time (float64), breathing_signal (float64)
-├── inhale_times_{clip_id}.parquet    # optional: column time_s (float64)
-├── exhale_times_{clip_id}.parquet    # optional: column time_s (float64)
-└── ...
+├── thermistor_{clip_id}.parquet      # columns Time (float64), Signal (float64)
+├── inhale_times_{clip_id}.parquet    # column time_s (float64)
+├── exhale_times_{clip_id}.parquet    # column time_s (float64)
+└── ...                               # repeated for every clip
 ```
 
-`thermistor_{clip_id}.parquet` is the predicted breathing trace (any
-sampling rate; resampled onto the canonical 60 Hz grid before scoring).
-`breathing_signal` is an arbitrary-unit waveform, not a calibrated ADC
-voltage.
+`Time`/`Signal` match the packaged dataset's own thermistor schema exactly
+(same casing) -- ground truth needs no translation, and neither does a
+submission. `thermistor_{clip_id}.parquet` is the predicted breathing trace
+(any sampling rate; resampled onto the canonical 60 Hz grid before scoring).
+`Signal` is an arbitrary-unit waveform, not a calibrated ADC voltage, even
+though it shares the ground truth's column name.
 
-`inhale_times_{clip_id}.parquet` / `exhale_times_{clip_id}.parquet` let you
-submit onset/offset times directly (e.g. from a model with a dedicated event
-head) instead of relying on peak-detection over the thermistor file. Each is
-optional and scored independently — no requirement to submit both, or for
-counts to match; real breathing isn't a strict alternation of the two
-(breath holds, apnea, sniffing bursts). See
+`inhale_times_{clip_id}.parquet` / `exhale_times_{clip_id}.parquet` are your
+own onset/offset times for that clip — not optional, and not detected for
+you. If you don't have a dedicated event head or better source, run
+[`detect_inhalation_events`](scoring/src/scoring/processing.py) on your own
+predicted signal and submit its output; that's the same function ground
+truth is scored with, so this is never worse than leaving it to us. Onsets
+and offsets need not match in count (real breathing isn't a strict
+alternation of the two — breath holds, apnea, sniffing bursts). See
 [`scoring/src/scoring/validation.py`](scoring/src/scoring/validation.py) for
-the exact schema checks.
+the exact schema checks, or run
+[`scoring/validate_submission.py`](scoring/validate_submission.py) yourself
+before submitting.
 
-Clips are discovered from `thermistor_*.parquet`; a clip missing that
-required file is skipped with a warning.
+Clips are discovered from `thermistor_*.parquet`; a clip missing any of the
+three required files is skipped with a warning.
 
 ---
 
@@ -153,7 +167,13 @@ every participant submission (image reference in
 2. Fetches ground-truth parquets from S3
 3. Computes all metrics and writes `$output/scores.json` (+ per-clip detail)
 
-To test it locally:
+The image is built and pushed to GHCR on every GitHub release (semver +
+`latest` tags, see [CI / CD](#ci--cd) below) -- see
+[`scoring/README.md`](scoring/README.md) for how to pull and run it directly
+(the volume/env-var contract, PowerShell examples, etc.), which is also the
+most faithful way to reproduce a Codabench score locally.
+
+To test it locally without Docker:
 
 ```bash
 cd scoring
@@ -163,7 +183,7 @@ cp .env.example .env   # fill in GROUND_TRUTH_S3_URI
 # Simulate a Codabench scoring run
 mkdir -p /tmp/test_input/res /tmp/test_output
 cp path/to/predictions/*.parquet /tmp/test_input/res/
-uv run --env-file .env python score.py /tmp/test_input /tmp/test_output
+uv run --env-file .env score.py /tmp/test_input /tmp/test_output
 cat /tmp/test_output/scores.json
 ```
 

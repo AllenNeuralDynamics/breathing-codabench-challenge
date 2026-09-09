@@ -6,8 +6,8 @@ Called by the platform as:
 
 $input/res/ (participant submission, zip extracted), clip_id = "{session}_part_{part}":
     thermistor_{clip_id}.parquet     required: continuous predicted signal
-    inhale_times_{clip_id}.parquet   optional: submitted onset times
-    exhale_times_{clip_id}.parquet   optional: submitted offset times
+    inhale_times_{clip_id}.parquet   required: submitted onset times
+    exhale_times_{clip_id}.parquet   required: submitted offset times
 
 $output/:
     scores.json     leaderboard scalars (aggregated across clips)
@@ -32,14 +32,14 @@ from botocore.config import Config
 from scoring.data import ground_truth_s3_location
 from scoring.metrics import Score, score_clip
 from scoring.validation import (
+    EXHALE_TIMES_STREAM,
+    INHALE_TIMES_STREAM,
+    THERMISTOR_STREAM,
+    discover_clip_ids,
     event_times_from_frame,
     validate_event_times_frame,
     validate_signal_frame,
 )
-
-THERMISTOR_STREAM = "thermistor"
-INHALE_TIMES_STREAM = "inhale_times"
-EXHALE_TIMES_STREAM = "exhale_times"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -70,11 +70,11 @@ def _load_predicted(pred_dir: Path, clip_id: str) -> pd.DataFrame:
 
 def _load_predicted_event_times(
     pred_dir: Path, clip_id: str, stream: str
-) -> np.ndarray | None:
-    """Load a submission's optional {stream}_{clip_id}.parquet, or None."""
+) -> np.ndarray:
+    """Load a submission's required {stream}_{clip_id}.parquet."""
     path = pred_dir / f"{stream}_{clip_id}.parquet"
     if not path.exists():
-        return None
+        raise FileNotFoundError(f"Missing {stream} for clip {clip_id}: {path}")
     df = pd.read_parquet(path)
     validate_event_times_frame(df, clip_id=clip_id, kind=stream)
     return event_times_from_frame(df)
@@ -93,12 +93,7 @@ def main(input_dir: Path, output_dir: Path) -> None:
     detail_dir = output_dir / "detailed"
     detail_dir.mkdir(exist_ok=True)
 
-    # Clips are identified by their required thermistor_{clip_id}.parquet --
-    # the optional inhale_times_/exhale_times_ side files aren't clip lists.
-    prefix = f"{THERMISTOR_STREAM}_"
-    pred_clip_ids = [
-        p.stem.removeprefix(prefix) for p in pred_dir.glob(f"{prefix}*.parquet")
-    ]
+    pred_clip_ids = discover_clip_ids(pred_dir)
     if not pred_clip_ids:
         sys.exit("No prediction parquets found in submission.")
 
