@@ -7,6 +7,8 @@
 #   "pyarrow>=14.0",
 #   "matplotlib>=3.8",
 #   "marimo",
+#   "anywidget>=0.9",
+#   "traitlets>=5",
 # ]
 # ///
 
@@ -20,6 +22,7 @@ app = marimo.App(width="medium")
 @app.cell(hide_code=True)
 async def _():
     import asyncio
+    import html
     import io
     import json
     import re
@@ -111,6 +114,7 @@ async def _():
         filter_sniff_signal,
         http_get_bytes,
         http_get_str,
+        html,
         io,
         json,
         mo,
@@ -196,17 +200,38 @@ async def _(ET, http_get_str, mo, re, s3_prefix_input, urllib):
             break
         _token = _next.text
 
-    # Build clip map: label → S3 key (thermistor parquet)
-    _clip_map: dict[str, str] = {}
+    # Build clip map: label → S3 key (thermistor parquet), plus the camera
+    # MP4s sharing that clip's directory/session/part suffix.
+    _videos_by_clip: dict[tuple[str, str, str], dict[str, str]] = {}
     for _k in _all_keys:
-        _m = re.match(r".*/thermistor_(\d+)_part_(\d+)\.parquet$", _k)
+        _m = re.match(r"(.*/)?video_(.+)_(\d+)_part_(\d+)\.mp4$", _k)
+        if _m:
+            _parent = _m.group(1) or ""
+            _camera = _m.group(2)
+            # Thermistors remain under ``public/train``.  Their streaming-
+            # optimized companions live in the separate remuxed mirror.
+            _remuxed_key = _k.replace(
+                "/public/train/", "/videos_remuxed/public/train/", 1
+            )
+            _videos_by_clip.setdefault((_parent, _m.group(3), _m.group(4)), {})[
+                _camera
+            ] = _remuxed_key
+
+    _clip_map: dict[str, str] = {}
+    _video_map: dict[str, dict[str, str]] = {}
+    for _k in _all_keys:
+        _m = re.match(r"(.*/)?thermistor_(\d+)_part_(\d+)\.parquet$", _k)
         if _m:
             _split = _k.rsplit("/", 2)[-2] if _k.count("/") >= 2 else ""
-            _label = f"{_split} / session {_m.group(1)}, part {_m.group(2)}"
+            _label = f"{_split} / session {_m.group(2)}, part {_m.group(3)}"
             _clip_map[_label] = _k
+            _video_map[_k] = _videos_by_clip.get(
+                (_m.group(1) or "", _m.group(2), _m.group(3)), {}
+            )
 
     clip_map = _clip_map
-    return (clip_map,)
+    video_map = _video_map
+    return clip_map, video_map
 
 
 # ── Cell 5: clip selector ─────────────────────────────────────────────────────
@@ -233,7 +258,103 @@ def _(clip_map, mo):
     return (clip_selector,)
 
 
-# ── Cell 6: fetch thermistor parquet ─────────────────────────────────────────
+# ── Cell 6: find paired video streams for this clip ───────────────────────────
+@app.cell
+def _(clip_map, clip_selector, mo, video_map):
+    clip_videos = video_map.get(clip_map[clip_selector.value], {})
+    if not clip_videos:
+        _video_status = mo.callout(
+            mo.md("No MP4 video files were found alongside this thermistor clip."),
+            kind="warn",
+        )
+    else:
+        _video_status = mo.md("### Paired camera streams")
+    _video_status
+    return (clip_videos,)
+
+
+# ── Cell 7: synchronized paired native-video widget ──────────────────────────
+@app.cell
+def _():
+    import anywidget
+    import traitlets
+
+    class PairedCameras(anywidget.AnyWidget):
+        _esm = r"""
+        function render({ model, el }) {
+          const root = document.createElement("div");
+          root.style.cssText = "display:flex; flex-wrap:wrap; gap:16px";
+          const videos = model.get("sources").map(({ label, src }) => {
+            const panel = document.createElement("div");
+            panel.style.cssText = "display:grid; gap:6px; min-width:0";
+            const title = document.createElement("strong");
+            title.textContent = `${label} camera`;
+            const video = document.createElement("video");
+            video.controls = true;
+            video.playsInline = true;
+            video.preload = "metadata";
+            video.style.cssText = "width:360px; max-width:100%; background:#111";
+            video.src = src;
+            panel.append(title, video);
+            root.appendChild(panel);
+            return video;
+          });
+          const peer = (video) => videos.find((candidate) => candidate !== video);
+          for (const video of videos) {
+            video.addEventListener("play", () => {
+              const other = peer(video);
+              if (!other) return;
+              if (Math.abs(other.currentTime - video.currentTime) > 0.02) {
+                other.currentTime = video.currentTime;
+              }
+              if (other.paused) other.play().catch(() => {});
+            });
+            video.addEventListener("pause", () => {
+              const other = peer(video);
+              if (other && !other.paused) other.pause();
+            });
+            video.addEventListener("seeking", () => {
+              const other = peer(video);
+              if (other && Math.abs(other.currentTime - video.currentTime) > 0.02) {
+                other.currentTime = video.currentTime;
+              }
+            });
+            video.addEventListener("ratechange", () => {
+              const other = peer(video);
+              if (other) other.playbackRate = video.playbackRate;
+            });
+            video.addEventListener("timeupdate", () => {
+              const other = peer(video);
+              if (other && Math.abs(other.currentTime - video.currentTime) > 0.12) {
+                other.currentTime = video.currentTime;
+              }
+            });
+          }
+          el.replaceChildren(root);
+        }
+        export default { render };
+        """
+
+        sources = traitlets.List(traitlets.Dict()).tag(sync=True)
+
+    return (PairedCameras,)
+
+
+# ── Cell 8: stream the paired remuxed S3 videos ──────────────────────────────
+@app.cell
+def _(PairedCameras, clip_videos, mo, urllib):
+    _sources = []
+    for _camera, _key in sorted(clip_videos.items()):
+        _sources.append({
+            "label": _camera.title(),
+            "src": "https://aind-scratch-data.s3.amazonaws.com/"
+            + urllib.parse.quote(_key, safe="/"),
+        })
+    mo.ui.anywidget(PairedCameras(sources=_sources))
+    return
+
+
+# ── Cell 8: fetch thermistor parquet ─────────────────────────────────────────
 @app.cell
 async def _(clip_map, clip_selector, http_get_bytes, io, mo, pq):
     _BUCKET = "aind-scratch-data"
@@ -252,7 +373,7 @@ async def _(clip_map, clip_selector, http_get_bytes, io, mo, pq):
     return (therm,)
 
 
-# ── Cell 7: clip summary ──────────────────────────────────────────────────────
+# ── Cell 9: clip summary ──────────────────────────────────────────────────────
 @app.cell
 def _(mo, np, therm):
     _t = therm["Time"].to_numpy()
