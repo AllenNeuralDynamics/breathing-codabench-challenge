@@ -5,7 +5,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-# Build context is the repo root
+ARG VERSION=42.42.42
+ENV SETUPTOOLS_SCM_PRETEND_VERSION=$VERSION
 
 COPY . .
 RUN uv sync --package scoring --no-dev --frozen --no-cache
