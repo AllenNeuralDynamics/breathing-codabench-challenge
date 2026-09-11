@@ -11,7 +11,7 @@ package or its Docker image.
 ## Architecture
 
 ```
-720x540 --downsample--> WxH --crop--> box --> 4 channels --> CNN --> TCN --> 60 Hz waveform
+720x540 --downsample--> WxH --crop--> box --> channels --> CNN --> TCN --> 60 Hz waveform
                                               gray                    \--> inhale-onset heatmap
                                               diff  I(t) - I(t-4)
                                               flow_x, flow_y  (DIS, stride 4)
@@ -54,6 +54,26 @@ session trains together; defaults match the settings behind the shipped model.
 ```bash
 uv run python -m breathing_cnn_tcn.train
 ```
+
+`--channels` picks which of the four stored channels the model is trained on —
+`gray`, `diff`, `flow_x`, `flow_y`, plus the groups `flow` (both flow planes)
+and `all`. Preprocessing always writes all four, so this selects without
+reprocessing: every variant reads byte-identical crops and shares one
+`channel_stats.json`. The selection lands in the run directory name and in the
+checkpoint, so `evaluate` and `submit` need no extra flags.
+
+```bash
+uv run python -m breathing_cnn_tcn.train --channels gray          # appearance only
+uv run python -m breathing_cnn_tcn.train --channels gray+diff     # no optical flow
+uv run python -m breathing_cnn_tcn.train --channels diff+flow     # motion only
+```
+
+Each of those is a model trained from scratch on those channels alone — not one
+4-channel model with inputs masked — so comparing them measures what training
+with the extra channels buys. Two caveats when you do: augmentation is not
+channel-neutral (a `gray` run gets no motion rescaling, a `diff+flow` run no
+brightness/contrast jitter), and `gray` alone is not a motion-free model, since
+the TCN still sees how the frame embeddings evolve.
 
 **5. Evaluate** on the reserved sessions, scored the way the competition scores.
 Several `--checkpoint` paths are ensembled; add `--plot` for the rate-breakdown

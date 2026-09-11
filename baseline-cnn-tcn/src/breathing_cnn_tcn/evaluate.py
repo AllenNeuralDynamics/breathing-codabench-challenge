@@ -39,6 +39,7 @@ import torch
 from scoring.metrics import score_clip
 from scoring.processing import BREATHING_SIGNAL_COLUMN, TIME_COLUMN
 
+from .channels import ChannelSet
 from .clips import PUBLIC_SPLIT
 from .dataset import ClipEntry, load_manifest
 from .infer import predict_clip
@@ -53,10 +54,19 @@ def load_checkpoint(
 
     ``model`` holds whichever weights the run selected -- the EMA copy when
     averaging was enabled -- so nothing here needs to know how it was trained.
+
+    The channel selection comes from the checkpoint, not from the current
+    manifest: it fixes the first convolution's shape, so reading it from
+    anywhere else would build a model the weights do not fit.  Checkpoints
+    written before ``--channels`` existed have no such field and trained on
+    every stored channel, which their own manifest config records.  Returned
+    ``mean``/``std`` stay full-width -- :func:`~.infer.predict_clip` slices
+    them to the model.
     """
     state = torch.load(path, map_location=device, weights_only=False)
     config = state["feature_config"]
-    model = BreathingNet(in_channels=len(config["channel_names"])).to(device)
+    channels = ChannelSet.parse(state.get("channels") or config["channel_names"])
+    model = BreathingNet(channels=channels).to(device)
     model.load_state_dict(state["model"])
     model.eval()
     return model, state["mean"], state["std"], state
