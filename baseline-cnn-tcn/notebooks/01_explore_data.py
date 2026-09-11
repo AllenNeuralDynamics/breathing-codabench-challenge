@@ -268,11 +268,11 @@ def _(
     t_raw,
     v_filtered,
 ):
-    _df_in = pd.DataFrame({"time": t_raw, "adc_voltage": v_filtered})
+    _df_in = pd.DataFrame({"Time": t_raw, "Signal": v_filtered})
     _df_rs = resample_uniform(_df_in, target_fs=CANONICAL_BREATHING_SAMPLING_RATE)
 
-    t_rs = _df_rs["time"].to_numpy(dtype=float)
-    v_rs = _df_rs["adc_voltage"].to_numpy(dtype=float)
+    t_rs = _df_rs["Time"].to_numpy(dtype=float)
+    v_rs = _df_rs["Signal"].to_numpy(dtype=float)
     fs_rs = CANONICAL_BREATHING_SAMPLING_RATE
     return fs_rs, t_rs, v_rs
 
@@ -521,7 +521,7 @@ def _(
 
     if _png:
         _frame_widget = mo.vstack([
-            mo.image(src=_png, width=400),
+            mo.image(src=_png, width="100%"),
             mo.md(f"frame **{frame_idx}** · t = {_t_frame:.3f} s"),
         ])
     else:
@@ -560,7 +560,7 @@ def _(
 
     mo.vstack([
         time_slider,
-        mo.hstack([_frame_widget, mo.as_html(_fig)], justify="start", gap=2),
+        mo.hstack([_frame_widget, mo.as_html(_fig)], widths=[1, 3], align="start", gap=2),
     ])
     return
 
