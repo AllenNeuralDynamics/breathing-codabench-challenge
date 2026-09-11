@@ -32,7 +32,7 @@ from scoring.processing import (
 # Score dataclass
 # ---------------------------------------------------------------------------
 
-EVENT_TOLERANCE_S: float = 0.050
+EVENT_TOLERANCE_S: float = 0.017
 """Default tolerance (seconds) for matching predicted events to GT events.
 A predicted event within this window of a GT event counts as a true positive.
 """
