@@ -15,11 +15,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-train = ["torch>=2.6"]
+train = ["torch>=2.6,<2.8"]
 
 [tool.uv.sources]
 scoring = { workspace = true }
-torch = { index = "pytorch-cu128" }
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
