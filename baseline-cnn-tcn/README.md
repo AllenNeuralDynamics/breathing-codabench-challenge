@@ -10,12 +10,33 @@ package or its Docker image.
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    subgraph pre["preprocess.py — once, to disk"]
+        V["video<br/>720x540 @ native fps"] --> S["downsample WxH<br/>crop to box"]
+        T["frame timestamps"] --> A["select anchors<br/>nearest 60 Hz tick"]
+        S --> A
+        A --> C["channels, uint8<br/>gray · diff · flow_x · flow_y<br/>motion over tau, scaled by tau/dt"]
+    end
+
+    subgraph net["BreathingNet"]
+        C --> E["FrameEncoder<br/>4 conv stages 32→64→96→128, stride 2<br/>AdaptiveAvgPool 2x2 → Linear → GELU"]
+        E --> Z["Z(i), 128-d<br/>one per selection frame"]
+        Z --> R["resample_embeddings<br/>linear, on real timestamps"]
+        R --> Z60["Z(t) on the fixed 60 Hz grid"]
+        Z60 --> P["TemporalNet<br/>Conv1d 128→128<br/>6 residual blocks, dilations 1·2·4·8·16·32<br/>receptive field 253 samples ≈ 4.2 s"]
+        P --> W["signal head"]
+        P --> O["onset head"]
+    end
+
+    W --> OUT["60 Hz breathing trace"]
+    O --> OUT2["inhale-onset heatmap"]
 ```
-720x540 --downsample--> WxH --crop--> box --> channels --> CNN --> TCN --> 60 Hz waveform
-                                              gray                    \--> inhale-onset heatmap
-                                              diff  I(t) - I(t-4)
-                                              flow_x, flow_y  (DIS, stride 4)
-```
+
+The encoder's final pooling keeps a 2x2 grid rather than collapsing to one
+vector: a global average would let opposite-signed motion in different parts of
+the crop cancel. The TCN is non-causal — inference is offline, so there is no
+reason to hide the future.
 
 Both geometry choices are made by hand in
 [`annotate.py`](src/breathing_cnn_tcn/annotate.py): the **downsample target**
@@ -23,6 +44,32 @@ sets how much detail survives, and the **crop box** sets how much of the frame
 the model sees. The box is placed on the downsampled frame, so preprocessing
 scales before cropping and there is no second rescale — what you crop is the
 model's input shape.
+
+### Frame rate is not assumed anywhere
+
+Three time grids, kept distinct so that any camera works:
+
+| grid | rate | carries |
+| --- | --- | --- |
+| native | whatever the camera did (240 fps, ~504 fps, …) | decoded frames, the timestamp parquet |
+| selection | `--select-fs`, default 60 Hz | the cached feature array, one CNN input each |
+| output | fixed 60 Hz | TCN output, targets, submissions, every metric |
+
+Selection picks the native frame nearest each tick of a grid built from the
+clip's **own timestamps**, never a fixed frame-count stride — a stride only
+lands on an exact rate when the source fps happens to be a multiple of it.
+
+Motion channels are measured against the frame nearest `t - tau`
+(`tau = 16.67 ms`, a fixed interval in *time*, not a frame count) and scaled by
+`tau / dt` using the interval actually achieved, so `diff` and flow mean the
+same thing at 240 fps and at 504 fps.
+
+Selection and output are reconciled **after the CNN**, by interpolating frame
+embeddings against the real timestamps
+([`model.resample_embeddings`](src/breathing_cnn_tcn/model.py)) — not on
+pixels. Downstream of the encoder the camera's frame rate has stopped existing,
+so the TCN's receptive field and the loss's pooling scales are fixed time spans
+rather than per-clip ones.
 
 ## Getting started
 
@@ -35,7 +82,7 @@ uv sync --all-packages --extra train
 **1. Data** (~11 GiB, public bucket, no credentials).
 
 ```bash
-aws s3 sync --no-sign-request s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/9bd7d45e35cdfea74ae9c5897a336bb6dcc972288db862b523635ab5a397657a/public/train/ data/train/
+aws s3 sync --no-sign-request s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/3fd049f3b2d5bb39409611187918ac41ce1f8b0a0d8d113a3526e5cf5a2ebc08/public/train/ data/train/
 ```
 
 **2. Crop boxes** ship with the repo as `baseline-cnn-tcn/artifacts/session_boxes_face.json`.

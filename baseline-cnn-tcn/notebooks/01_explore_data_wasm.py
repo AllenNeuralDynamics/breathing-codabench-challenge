@@ -151,7 +151,7 @@ def _():
     s3_prefix_input = types.SimpleNamespace(
         value=(
             "vr-foraging/codabench-breathing-challenge/"
-            "9bd7d45e35cdfea74ae9c5897a336bb6dcc972288db862b523635ab5a397657a/public/train"
+            "3fd049f3b2d5bb39409611187918ac41ce1f8b0a0d8d113a3526e5cf5a2ebc08/public/train"
         )
     )
     return (s3_prefix_input,)
