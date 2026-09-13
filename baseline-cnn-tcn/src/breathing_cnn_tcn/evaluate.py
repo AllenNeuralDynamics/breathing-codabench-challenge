@@ -210,8 +210,8 @@ def main() -> None:
         f"({', '.join(str(s) for s in sorted(sessions))}) with {len(models)} model(s)\n"
     )
     header = (
-        f"{'clip':16s}{'sess':9s}{'max_xcorr':>10s}{'delay_s':>9s}"
-        f"{'inh_f1':>8s}{'exh_f1':>8s}{'inh_mae':>9s}{'kl_ibi':>8s}"
+        f"{'clip':16s}{'sess':9s}{'corr':>10s}"
+        f"{'inh_f1':>8s}{'exh_f1':>8s}{'kl_ibi':>8s}"
     )
     print(header)
     print("-" * len(header))
@@ -249,19 +249,17 @@ def main() -> None:
             plot_data.append(ClipPrediction(entry, signal, times, truth))
         print(
             f"{entry.clip_id:16s}{entry.session_idx:<9d}"
-            f"{score.max_xcorr:+10.3f}{score.xcorr_delay_s:+9.3f}"
-            f"{score.inhale_f1:8.3f}{score.exhale_f1:8.3f}"
-            f"{score.inhale_timing_mae_s:9.4f}{score.kl_ibi:8.3f}",
+            f"{score.correlation:+10.3f}"
+            f"{score.inhale_f1:8.3f}{score.exhale_f1:8.3f}{score.kl_ibi:8.3f}",
             flush=True,
         )
 
     print("-" * len(header))
     summary = {}
     for field in (
-        "max_xcorr",
+        "correlation",
         "inhale_f1",
         "exhale_f1",
-        "inhale_timing_mae_s",
         "kl_ibi",
     ):
         values = np.array([r[field] for r in rows], dtype=float)
@@ -269,9 +267,8 @@ def main() -> None:
         summary[field] = float(values.mean()) if len(values) else float("nan")
         summary[f"{field}_sd"] = float(values.std()) if len(values) else float("nan")
     print(
-        f"{'mean':25s}{summary['max_xcorr']:+10.3f}{'':9s}"
-        f"{summary['inhale_f1']:8.3f}{summary['exhale_f1']:8.3f}"
-        f"{summary['inhale_timing_mae_s']:9.4f}{summary['kl_ibi']:8.3f}"
+        f"{'mean':25s}{summary['correlation']:+10.3f}"
+        f"{summary['inhale_f1']:8.3f}{summary['exhale_f1']:8.3f}{summary['kl_ibi']:8.3f}"
     )
 
     # The composite proposed in the organiser notes, for orientation only -- the
@@ -279,7 +276,7 @@ def main() -> None:
     composite = (
         0.50 * summary["inhale_f1"]
         + 0.20 * summary["exhale_f1"]
-        + 0.20 * max(0.0, summary["max_xcorr"])
+        + 0.20 * max(0.0, summary["correlation"])
         + 0.10 * float(np.exp(-summary["kl_ibi"]))
     )
     print(f"\nproposed composite (0.5/0.2/0.2/0.1): {composite:.4f}")
