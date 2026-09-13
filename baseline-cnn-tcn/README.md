@@ -10,12 +10,32 @@ package or its Docker image.
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    subgraph pre["preprocess.py — once, to disk"]
+        V["video<br/>720x540 @ native fps"] --> S["downsample WxH<br/>crop to box"]
+        T["frame timestamps"] --> A["select anchors<br/>nearest 60 Hz tick"]
+        S --> A
+        A --> C["channels, uint8<br/>gray · diff · flow_x · flow_y<br/>motion over tau, scaled by tau/dt"]
+    end
+
+    subgraph net["BreathingNet"]
+        C --> E["FrameEncoder<br/>4 conv stages 32→64→96→128, stride 2<br/>AdaptiveAvgPool 2x2 → Linear → GELU"]
+        E --> Z["Z(i), 128-d<br/>one per selection frame"]
+        Z --> R["resample_embeddings<br/>linear, on real timestamps"]
+        R --> Z60["Z(t) on the fixed 60 Hz grid"]
+        Z60 --> P["TemporalNet<br/>Conv1d 128→128<br/>6 residual blocks, dilations 1·2·4·8·16·32<br/>receptive field 253 samples ≈ 4.2 s"]
+        P --> W["signal head"]
+        P --> O["onset head"]
+    end
+
+    W --> OUT["60 Hz breathing trace"]
+    O --> OUT2["inhale-onset heatmap"]
 ```
-720x540 --downsample--> WxH --crop--> box --> 4 channels --> CNN --> TCN --> 60 Hz waveform
-                                              gray                    \--> inhale-onset heatmap
-                                              diff  I(t) - I(t-4)
-                                              flow_x, flow_y  (DIS, stride 4)
-```
+
+The encoder's final pooling keeps a 2x2 grid rather than collapsing to one
+vector, to preserve directional motion signal. The TCN is non-causal (offline
+inference).
 
 Both geometry choices are made by hand in
 [`annotate.py`](src/breathing_cnn_tcn/annotate.py): the **downsample target**
@@ -23,6 +43,28 @@ sets how much detail survives, and the **crop box** sets how much of the frame
 the model sees. The box is placed on the downsampled frame, so preprocessing
 scales before cropping and there is no second rescale — what you crop is the
 model's input shape.
+
+### Frame rate is not assumed anywhere
+
+Three time grids:
+
+| grid | rate | carries |
+| --- | --- | --- |
+| native | camera fps (240, ~504, …) | decoded frames, timestamp parquet |
+| selection | `--select-fs`, default 60 Hz | cached feature array, one CNN input each |
+| output | fixed 60 Hz | TCN output, targets, submissions, every metric |
+
+Selection picks the native frame nearest each tick of a grid built from the
+clip's own timestamps (not a fixed frame-count stride, which only lands on an
+exact rate when native fps is a multiple of it).
+
+Motion channels are measured against the frame nearest `t - tau`
+(`tau = 16.67 ms`) and scaled by `tau / dt` (the achieved interval), so `diff`
+and flow mean the same thing at any frame rate.
+
+Selection and output grids are reconciled after the CNN by interpolating frame
+embeddings ([`model.resample_embeddings`](src/breathing_cnn_tcn/model.py)),
+not on pixels.
 
 ## Getting started
 
@@ -35,7 +77,7 @@ uv sync --all-packages --extra train
 **1. Data** (~11 GiB, public bucket, no credentials).
 
 ```bash
-aws s3 sync --no-sign-request s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/9bd7d45e35cdfea74ae9c5897a336bb6dcc972288db862b523635ab5a397657a/public/train/ data/train/
+aws s3 sync --no-sign-request s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/3fd049f3b2d5bb39409611187918ac41ce1f8b0a0d8d113a3526e5cf5a2ebc08/public/train/ data/train/
 ```
 
 **2. Crop boxes** ship with the repo as `baseline-cnn-tcn/artifacts/session_boxes_face.json`.
@@ -54,6 +96,26 @@ session trains together; defaults match the settings behind the shipped model.
 ```bash
 uv run python -m breathing_cnn_tcn.train
 ```
+
+`--channels` picks which of the four stored channels the model is trained on —
+`gray`, `diff`, `flow_x`, `flow_y`, plus the groups `flow` (both flow planes)
+and `all`. Preprocessing always writes all four, so this selects without
+reprocessing: every variant reads byte-identical crops and shares one
+`channel_stats.json`. The selection lands in the run directory name and in the
+checkpoint, so `evaluate` and `submit` need no extra flags.
+
+```bash
+uv run python -m breathing_cnn_tcn.train --channels gray          # appearance only
+uv run python -m breathing_cnn_tcn.train --channels gray+diff     # no optical flow
+uv run python -m breathing_cnn_tcn.train --channels diff+flow     # motion only
+```
+
+Each of those is a model trained from scratch on those channels alone — not one
+4-channel model with inputs masked — so comparing them measures what training
+with the extra channels buys. Two caveats when you do: augmentation is not
+channel-neutral (a `gray` run gets no motion rescaling, a `diff+flow` run no
+brightness/contrast jitter), and `gray` alone is not a motion-free model, since
+the TCN still sees how the frame embeddings evolve.
 
 **5. Evaluate** on the reserved sessions, scored the way the competition scores.
 Several `--checkpoint` paths are ensembled; add `--plot` for the rate-breakdown
