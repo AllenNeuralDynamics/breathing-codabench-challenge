@@ -34,9 +34,8 @@ flowchart LR
 ```
 
 The encoder's final pooling keeps a 2x2 grid rather than collapsing to one
-vector: a global average would let opposite-signed motion in different parts of
-the crop cancel. The TCN is non-causal — inference is offline, so there is no
-reason to hide the future.
+vector, to preserve directional motion signal. The TCN is non-causal (offline
+inference).
 
 Both geometry choices are made by hand in
 [`annotate.py`](src/breathing_cnn_tcn/annotate.py): the **downsample target**
@@ -47,29 +46,25 @@ model's input shape.
 
 ### Frame rate is not assumed anywhere
 
-Three time grids, kept distinct so that any camera works:
+Three time grids:
 
 | grid | rate | carries |
 | --- | --- | --- |
-| native | whatever the camera did (240 fps, ~504 fps, …) | decoded frames, the timestamp parquet |
-| selection | `--select-fs`, default 60 Hz | the cached feature array, one CNN input each |
+| native | camera fps (240, ~504, …) | decoded frames, timestamp parquet |
+| selection | `--select-fs`, default 60 Hz | cached feature array, one CNN input each |
 | output | fixed 60 Hz | TCN output, targets, submissions, every metric |
 
 Selection picks the native frame nearest each tick of a grid built from the
-clip's **own timestamps**, never a fixed frame-count stride — a stride only
-lands on an exact rate when the source fps happens to be a multiple of it.
+clip's own timestamps (not a fixed frame-count stride, which only lands on an
+exact rate when native fps is a multiple of it).
 
 Motion channels are measured against the frame nearest `t - tau`
-(`tau = 16.67 ms`, a fixed interval in *time*, not a frame count) and scaled by
-`tau / dt` using the interval actually achieved, so `diff` and flow mean the
-same thing at 240 fps and at 504 fps.
+(`tau = 16.67 ms`) and scaled by `tau / dt` (the achieved interval), so `diff`
+and flow mean the same thing at any frame rate.
 
-Selection and output are reconciled **after the CNN**, by interpolating frame
-embeddings against the real timestamps
-([`model.resample_embeddings`](src/breathing_cnn_tcn/model.py)) — not on
-pixels. Downstream of the encoder the camera's frame rate has stopped existing,
-so the TCN's receptive field and the loss's pooling scales are fixed time spans
-rather than per-clip ones.
+Selection and output grids are reconciled after the CNN by interpolating frame
+embeddings ([`model.resample_embeddings`](src/breathing_cnn_tcn/model.py)),
+not on pixels.
 
 ## Getting started
 
