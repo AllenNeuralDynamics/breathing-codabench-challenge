@@ -18,7 +18,6 @@ from dataclasses import asdict, dataclass
 import numpy as np
 import pandas as pd
 from scipy.optimize import linear_sum_assignment
-from scipy.signal import correlate, correlation_lags
 
 from scoring.processing import (
     BREATHING_SIGNAL_COLUMN,
@@ -51,20 +50,13 @@ class Score:
     # Signal-level similarity
     # ------------------------------------------------------------------
 
-    max_xcorr: float
-    """Peak of the normalised cross-correlation between GT and prediction.
+    correlation: float
+    """Normalised correlation between GT and prediction at zero lag.
 
-    Range [-1, 1].  Computed as the maximum of
-    ``xcorr / sqrt(energy_gt * energy_pred)`` across all lags.
-    Higher is better; 1.0 is a perfect phase-aligned match.
-    """
-
-    xcorr_delay_s: float
-    """Lag (seconds) at which the cross-correlation peaks.
-
-    Positive → prediction leads ground truth.
-    Negative → prediction lags ground truth.
-    Closer to 0 is better.
+    Range [-1, 1].  Computed as
+    ``sum(gt * pred) / sqrt(energy_gt * energy_pred)`` with both signals
+    mean-subtracted.  Always evaluated at zero lag -- no lag search is
+    performed.  Higher is better; 1.0 is a perfect match.
     """
 
     # ------------------------------------------------------------------
@@ -87,21 +79,6 @@ class Score:
     Same matching strategy as ``inhale_f1`` but applied to exhalation
     (inhalation-offset) events.
     Range [0, 1].  Higher is better.
-    """
-
-    inhale_timing_mae_s: float
-    """Mean absolute timing error (seconds) for matched inhalation events.
-
-    Only event pairs that were matched within the tolerance window
-    contribute.  Unmatched GT events (false negatives) and spurious
-    predictions (false positives) are excluded.
-    Lower is better; NaN if no events could be matched.
-    """
-
-    exhale_timing_mae_s: float
-    """Mean absolute timing error (seconds) for matched exhalation events.
-
-    Same convention as ``inhale_timing_mae_s``.
     """
 
     # ------------------------------------------------------------------
@@ -214,69 +191,41 @@ def event_f1(
     return float(2 * tp / denominator)
 
 
-def event_timing_mae(
-    truth_times_s: np.ndarray,
-    predicted_times_s: np.ndarray,
-    tolerance_s: float = EVENT_TOLERANCE_S,
-) -> float:
-    """Mean absolute timing error (seconds) over matched event pairs.
-
-    Only pairs matched within *tolerance_s* contribute; false positives and
-    false negatives are excluded (they are penalised by :func:`event_f1`
-    instead).  Returns NaN when no events could be matched.
-    """
-    matches = match_events(truth_times_s, predicted_times_s, tolerance_s)
-    if not matches:
-        return float("nan")
-    errors = [abs(truth_times_s[i] - predicted_times_s[j]) for i, j in matches]
-    return float(np.mean(errors))
-
-
 # ---------------------------------------------------------------------------
 # Signal-level metrics
 # ---------------------------------------------------------------------------
 
 
-def max_cross_correlation(
+def zero_lag_correlation(
     truth: np.ndarray,
     predicted: np.ndarray,
-    fs: float,
-) -> tuple[float, float]:
-    """Peak of the normalised cross-correlation and the lag where it occurs.
+) -> float:
+    """Normalised correlation between GT and prediction at zero lag.
 
-    Both signals are mean-subtracted, and the cross-correlation is normalised
-    by ``sqrt(energy_truth * energy_predicted)`` so the peak lies in [-1, 1]
-    and is independent of signal amplitude.
+    Both signals are mean-subtracted, and the correlation is normalised by
+    ``sqrt(energy_truth * energy_predicted)`` so it lies in [-1, 1] and is
+    independent of signal amplitude.  No lag search is performed -- the two
+    signals are assumed to already be aligned in time.
 
     Parameters
     ----------
     truth, predicted:
-        1-D signals of equal length, uniformly sampled at *fs* Hz.
-    fs:
-        Sampling rate in Hz.
+        1-D signals of equal length.
 
     Returns
     -------
-    (max_xcorr, delay_s)
-        *max_xcorr* is the peak normalised correlation.  *delay_s* is the lag
-        (seconds) at which it occurs: positive when the prediction leads the
-        ground truth, negative when it lags.
+    float
+        Correlation coefficient in [-1, 1].  NaN if either signal has zero
+        energy (e.g. constant).
     """
     truth = truth - truth.mean()
     predicted = predicted - predicted.mean()
 
     energy = np.sqrt(np.sum(truth**2) * np.sum(predicted**2))
     if energy == 0:
-        return float("nan"), float("nan")
+        return float("nan")
 
-    # correlate(truth, predicted)[k] = Σ truth[n]·predicted[n-k]:
-    # a peak at positive lag k means the prediction occurs k samples EARLIER
-    # than the truth (prediction leads).
-    xcorr = correlate(truth, predicted, mode="full") / energy
-    lags = correlation_lags(len(truth), len(predicted), mode="full")
-
-    peak_idx = int(np.argmax(xcorr))
-    return float(xcorr[peak_idx]), float(lags[peak_idx] / fs)
+    return float(np.sum(truth * predicted) / energy)
 
 
 # ---------------------------------------------------------------------------
@@ -375,7 +324,7 @@ def score_clip(
     truth_time, predicted_time = truth_time[:n], predicted_time[:n]
 
     # ── Signal-level ─────────────────────────────────────────────────────
-    xcorr_peak, xcorr_delay = max_cross_correlation(truth, predicted, fs)
+    corr = zero_lag_correlation(truth, predicted)
 
     # ── Events ───────────────────────────────────────────────────────────
     # Defaults for whichever side/type isn't overridden below. Indices are
@@ -410,11 +359,8 @@ def score_clip(
     )
 
     return Score(
-        max_xcorr=xcorr_peak,
-        xcorr_delay_s=xcorr_delay,
+        correlation=corr,
         inhale_f1=event_f1(truth_on_s, predicted_on_s, tolerance_s),
         exhale_f1=event_f1(truth_off_s, predicted_off_s, tolerance_s),
-        inhale_timing_mae_s=event_timing_mae(truth_on_s, predicted_on_s, tolerance_s),
-        exhale_timing_mae_s=event_timing_mae(truth_off_s, predicted_off_s, tolerance_s),
         kl_ibi=kl_ibi(truth_on_s, predicted_on_s),
     )
