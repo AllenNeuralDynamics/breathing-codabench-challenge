@@ -67,7 +67,7 @@ class Score:
     """F1 score for inhalation-onset events.
 
     A predicted event is a true positive if it falls within
-    ``EVENT_TOLERANCE_S`` (default 50 ms) of a GT inhalation onset.
+    ``EVENT_TOLERANCE_S`` (default 17 ms) of a GT inhalation onset.
     Matching is an optimal one-to-one assignment (Hungarian algorithm);
     each GT event may be matched at most once.
     Range [0, 1].  Higher is better.
@@ -76,8 +76,8 @@ class Score:
     exhale_f1: float
     """F1 score for exhalation-onset events.
 
-    Same matching strategy as ``inhale_f1`` but applied to exhalation
-    (inhalation-offset) events.
+    Same matching strategy as ``inhale_f1`` but applied to exhalation-onset
+    events.
     Range [0, 1].  Higher is better.
     """
 
@@ -290,12 +290,17 @@ def score_clip(
     ----------
     truth_thermistor, predicted_thermistor:
         Clip dataframes with columns ``Time`` and ``Signal``.
-    truth_onset_times_s, truth_offset_times_s, predicted_onset_times_s,
-    predicted_offset_times_s:
+    truth_onset_times_s, predicted_onset_times_s:
+        Optional inhale-onset times (positive temperature peaks).
+    truth_offset_times_s, predicted_offset_times_s:
+        Optional exhale-onset times (negative temperature troughs). The
+        ``offset`` name is retained for API compatibility: an exhale onset is
+        also the preceding inhalation's offset.
+    All event-time overrides:
         Overrides, independent of each other; any omitted here are detected
         from the resampled signal via
-        :func:`~scoring.processing.detect_inhalation_events`. Onsets and
-        offsets need not pair up or match in count. Truth is never
+        :func:`~scoring.processing.detect_inhalation_events`. Inhale and
+        exhale onsets need not pair up or match in count. Truth is never
         submitted, so it's always auto-detected in practice; a real
         submission must supply both predicted times explicitly (see
         ``score.py`` / ``scoring.validation``) -- the omit-and-auto-detect

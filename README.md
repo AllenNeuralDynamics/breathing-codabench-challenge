@@ -137,12 +137,15 @@ submission. `thermistor_{clip_id}.parquet` is the predicted breathing trace
 though it shares the ground truth's column name.
 
 `inhale_times_{clip_id}.parquet` / `exhale_times_{clip_id}.parquet` are your
-own onset/offset times for that clip — not optional, and not detected for
-you. If you don't have a dedicated event head or better source, run
+own event-onset times for that clip — not optional, and not detected for you.
+With the thermistor polarity used here, an **inhale onset is a positive
+temperature peak** (the signal starts decreasing) and an **exhale onset is a
+negative temperature trough** (the signal starts increasing). If you don't
+have a dedicated event head or better source, run
 [`detect_inhalation_events`](scoring/src/scoring/processing.py) on your own
 predicted signal and submit its output; that's the same function ground
-truth is scored with, so this is never worse than leaving it to us. Onsets
-and offsets need not match in count (real breathing isn't a strict
+truth is scored with, so this is never worse than leaving it to us. Inhale and
+exhale onsets need not match in count (real breathing isn't a strict
 alternation of the two — breath holds, apnea, sniffing bursts). See
 [`scoring/src/scoring/validation.py`](scoring/src/scoring/validation.py) for
 the exact schema checks, or run

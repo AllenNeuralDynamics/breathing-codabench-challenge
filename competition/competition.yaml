@@ -49,8 +49,8 @@ scoring_programs:
   - index: 0
     name: breathing-scoring
     description: >
-      Fetches ground-truth parquets from S3 and computes DTW, Pearson r,
-      inhalation onset/offset MAE, and KL-IBI divergence.
+      Fetches ground-truth parquets from S3 and computes zero-lag correlation,
+      inhale/exhale onset F1, and KL-IBI divergence.
     command: python /app/score.py $input $output
     # Image is built and pushed by .github/workflows/build-images.yml
     container_image: ghcr.io/allenneuraldynamics/breathing-codabench-challenge/scoring:latest

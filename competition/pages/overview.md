@@ -102,6 +102,9 @@ recordings. Each session contributes two disjoint 300-second parts.
 | `Signal` | float64 | Thermistor ADC reading (a.u.) |
 
 Sampled at **~250 Hz** (≈75,000 rows per clip). The raw signal is unfiltered after acquisition.
+In this signal convention, inhalation begins at a positive temperature peak,
+as the trace starts decreasing; exhalation begins at a negative temperature
+trough, as the trace starts increasing.
 
 ### Video — `video_{face,side}_{S}_part_{P}.mp4`
 

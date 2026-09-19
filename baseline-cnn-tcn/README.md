@@ -30,7 +30,7 @@ flowchart LR
     end
 
     W --> OUT["60 Hz breathing trace"]
-    O --> OUT2["inhale-onset heatmap"]
+    O --> OUT2["inhale-onset heatmap<br/>positive temperature peaks"]
 ```
 
 The encoder's final pooling keeps a 2x2 grid rather than collapsing to one
