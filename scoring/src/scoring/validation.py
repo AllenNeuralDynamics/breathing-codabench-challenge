@@ -7,7 +7,7 @@ specific message instead of a stack trace or silently-wrong scoring.
 All three files are required per clip: ``thermistor_{clip_id}.parquet``
 (:func:`validate_signal_frame`) and ``inhale_times_{clip_id}.parquet`` /
 ``exhale_times_{clip_id}.parquet`` (:func:`validate_event_times_frame`).
-A participant with no better source for onset/offset times can run
+A participant with no better source for inhale/exhale onset times can run
 :func:`scoring.processing.detect_inhalation_events` on their own predicted
 signal and submit that. All raise :class:`SubmissionValidationError` on
 failure.

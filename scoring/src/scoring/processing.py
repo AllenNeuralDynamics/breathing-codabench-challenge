@@ -17,7 +17,7 @@ filter_sniff_signal(values, fs)
 detect_breathing_events(signal, fs, ...)
     Peak- and trough-detection on a filtered breathing signal.
 detect_inhalation_events(signal, fs)
-    Onset / offset detection for scoring (used by metrics.py).
+    Inhale- / exhale-onset detection for scoring (used by metrics.py).
 process_sniff_signal(data, fs) -> SniffProcessingResult
     Full end-to-end pipeline for raw HARP Series data.
 """
@@ -219,11 +219,16 @@ def detect_inhalation_events(
     sig: np.ndarray,
     fs: float,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Detect inhalation onset and offset sample indices for scoring.
+    """Detect inhale- and exhale-onset sample indices for scoring.
 
-    This function is used by :mod:`breathing_metrics.metrics` to align
-    predicted and ground-truth breathing events for onset / offset MAE and
-    IBI distribution metrics.
+    A thermistor trace reaches a positive peak when inhalation begins and the
+    temperature starts decreasing. It reaches a negative trough when
+    exhalation begins and the temperature starts increasing. The two event
+    series are detected independently and therefore need not have equal
+    lengths.
+
+    This function is used by :mod:`scoring.metrics` to align predicted and
+    ground-truth breathing events for event F1 and IBI distribution metrics.
 
     The signal is expected to be a **clean** breathing trace (ground-truth or
     participant prediction), not raw thermistor ADC data.
@@ -237,10 +242,10 @@ def detect_inhalation_events(
 
     Returns
     -------
-    onsets : np.ndarray of int
-        Sample indices of inhalation onsets (troughs preceding a peak).
-    offsets : np.ndarray of int
-        Sample indices of inhalation offsets (troughs following a peak).
+    inhale_onsets : np.ndarray of int
+        Sample indices of inhalation onsets (positive temperature peaks).
+    exhale_onsets : np.ndarray of int
+        Sample indices of exhalation onsets (negative temperature troughs).
     """
     min_distance = max(1, int(fs * MIN_BREATH_CYCLE_S))
     prominence = 0.1 * float(np.ptp(sig))
@@ -248,12 +253,7 @@ def detect_inhalation_events(
     peaks, _ = find_peaks(sig, distance=min_distance, prominence=prominence)
     troughs, _ = find_peaks(-sig, distance=min_distance, prominence=prominence)
 
-    if len(peaks) == 0 or len(troughs) == 0:
-        return np.array([], dtype=int), np.array([], dtype=int)
-
-    onsets = troughs[troughs < peaks[-1]]
-    offsets = troughs[troughs > peaks[0]]
-    return onsets, offsets
+    return peaks.astype(int), troughs.astype(int)
 
 
 # ---------------------------------------------------------------------------

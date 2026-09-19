@@ -2,8 +2,8 @@
 
 Writes thermistor_/inhale_times_/exhale_times_ parquets under
 submission/<run>/res/ (<run> = the checkpoint's parent directory name).
-Onsets use the model's onset head when exactly one checkpoint is given;
-offsets, and onsets otherwise, fall back to
+Inhale onsets use the model's onset head when exactly one checkpoint is given;
+exhale onsets, and inhale onsets otherwise, fall back to
 :func:`~scoring.processing.detect_inhalation_events`.
 
 Requires the split to already be preprocessed (see preprocess.py)::
@@ -61,9 +61,9 @@ def package_clip(
 ) -> int:
     """Write one clip's thermistor_/inhale_times_/exhale_times_ files.
 
-    Onsets use the onset-head probability when available; offsets, and
-    onsets otherwise, come from :func:`detect_inhalation_events`. Returns
-    n frames.
+    Inhale onsets use the onset-head probability when available; exhale
+    onsets, and inhale onsets otherwise, come from
+    :func:`detect_inhalation_events`. Returns n frames.
     """
     n = min(len(signal), len(times))
     clip_id = clip_suffix(entry)
@@ -73,20 +73,20 @@ def package_clip(
         {TIME_COLUMN: t, BREATHING_SIGNAL_COLUMN: sig.astype(np.float64)}
     ).to_parquet(res_dir / f"thermistor_{clip_id}.parquet", index=False)
 
-    detected_on, detected_off = detect_inhalation_events(
+    detected_inhale, detected_exhale = detect_inhalation_events(
         sig, CANONICAL_BREATHING_SAMPLING_RATE
     )
-    onset_times = (
+    inhale_times = (
         onset_head_times(onset_prob[:n], t)
         if onset_prob is not None
-        else t[detected_on]
+        else t[detected_inhale]
     )
-    offset_times = t[detected_off]
+    exhale_times = t[detected_exhale]
 
-    pd.DataFrame({"time_s": onset_times.astype(np.float64)}).to_parquet(
+    pd.DataFrame({"time_s": inhale_times.astype(np.float64)}).to_parquet(
         res_dir / f"inhale_times_{clip_id}.parquet", index=False
     )
-    pd.DataFrame({"time_s": offset_times.astype(np.float64)}).to_parquet(
+    pd.DataFrame({"time_s": exhale_times.astype(np.float64)}).to_parquet(
         res_dir / f"exhale_times_{clip_id}.parquet", index=False
     )
     return n
@@ -129,9 +129,9 @@ def main() -> None:
         "--onset-times",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Use the model's onset head for onsets (needs exactly one "
-        "--checkpoint); otherwise onsets fall back to "
-        "detect_inhalation_events, like offsets always do.",
+        help="Use the model's onset head for inhale onsets (needs exactly one "
+        "--checkpoint); otherwise inhale onsets fall back to "
+        "detect_inhalation_events, like exhale onsets always do.",
     )
     args = parser.parse_args()
     out_dir = args.out_dir or Path("submission") / args.checkpoint[0].parent.name

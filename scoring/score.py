@@ -6,8 +6,8 @@ Called by the platform as:
 
 $input/res/ (participant submission, zip extracted), clip_id = "{session}_part_{part}":
     thermistor_{clip_id}.parquet     required: continuous predicted signal
-    inhale_times_{clip_id}.parquet   required: submitted onset times
-    exhale_times_{clip_id}.parquet   required: submitted offset times
+    inhale_times_{clip_id}.parquet   required: submitted inhale-onset times
+    exhale_times_{clip_id}.parquet   required: submitted exhale-onset times
 
 $output/:
     scores.json     leaderboard scalars (aggregated across clips)
