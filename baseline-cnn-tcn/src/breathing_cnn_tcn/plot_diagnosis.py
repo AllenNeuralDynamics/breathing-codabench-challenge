@@ -53,10 +53,10 @@ from scoring.processing import (
     filter_sniff_signal,
     resample_uniform,
 )
+from zephyr.model import BreathingNet
 
 from .dataset import ClipEntry
 from .infer import predict_clip
-from .model import BreathingNet
 
 FS = CANONICAL_BREATHING_SAMPLING_RATE
 

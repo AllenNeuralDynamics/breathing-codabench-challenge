@@ -1,5 +1,5 @@
 # Run from the repo root (data lives in ./data):
-#  uv run marimo edit baseline-cnn-tcn/notebooks/01_explore_data.py
+#  uv run --with marimo marimo edit competition/notebooks/01_explore_data.py
 
 import marimo
 

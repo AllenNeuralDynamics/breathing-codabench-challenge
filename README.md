@@ -60,7 +60,7 @@ the S3 path, directory structure, and file schema.
 ### 3. Explore the data
 
 ```bash
-uv run marimo edit baseline-cnn-tcn/notebooks/01_explore_data.py
+uv run --with marimo marimo edit competition/notebooks/01_explore_data.py
 ```
 
 See [Explore the data](competition/pages/overview.md#explore-the-data) for a
@@ -74,7 +74,7 @@ Two are provided:
 | Baseline                                          | What it is                                                          |
 | ------------------------------------------------- | ------------------------------------------------------------------- |
 | [`baseline/`](baseline/README.md)                 | TODO.                                                               |
-| [`baseline-cnn-tcn/`](baseline-cnn-tcn/README.md) | A learned CNN + TCN model: crop, preprocess, train, evaluate, plot. |
+| [`baseline-cnn-tcn/`](baseline-cnn-tcn/README.md) | Crop, preprocess, train, evaluate, and submit with the [Zephyr](https://github.com/AllenNeuralDynamics/zephyr) CNN + TCN model. |
 
 Each README covers its own setup, training/inference, and Docker image.
 
