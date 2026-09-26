@@ -49,10 +49,11 @@ uv sync --all-packages
 ### 2. Download the data
 
 ```bash
-uv run competition/public_data/download_data.py --dest ./data
+aws s3 sync --no-sign-request s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/3fd049f3b2d5bb39409611187918ac41ce1f8b0a0d8d113a3526e5cf5a2ebc08/public/ ./data/
 ```
 
-No AWS account required — the bucket is public. See
+Install the AWS CLI first if needed. No AWS account or credentials are required —
+the bucket is public. See
 [Download the data](competition/pages/overview.md#download-the-data) and
 [Data layout](competition/pages/overview.md#data-layout) in the overview for
 the S3 path, directory structure, and file schema.
@@ -60,7 +61,7 @@ the S3 path, directory structure, and file schema.
 ### 3. Explore the data
 
 ```bash
-uv run marimo edit baseline-cnn-tcn/notebooks/01_explore_data.py
+uv run --with marimo marimo edit competition/notebooks/01_explore_data.py
 ```
 
 See [Explore the data](competition/pages/overview.md#explore-the-data) for a
@@ -74,7 +75,7 @@ Two are provided:
 | Baseline                                          | What it is                                                          |
 | ------------------------------------------------- | ------------------------------------------------------------------- |
 | [`baseline/`](baseline/README.md)                 | TODO.                                                               |
-| [`baseline-cnn-tcn/`](baseline-cnn-tcn/README.md) | A learned CNN + TCN model: crop, preprocess, train, evaluate, plot. |
+| [`baseline-cnn-tcn/`](baseline-cnn-tcn/README.md) | Crop, preprocess, train, evaluate, and submit with the [Zephyr](https://github.com/AllenNeuralDynamics/zephyr) CNN + TCN model. |
 
 Each README covers its own setup, training/inference, and Docker image.
 
