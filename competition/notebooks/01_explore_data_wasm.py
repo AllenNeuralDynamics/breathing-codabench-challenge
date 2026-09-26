@@ -137,7 +137,7 @@ def _(mo):
     Data streams from the public `aind-scratch-data` S3 bucket on demand.
 
     > **Want to see or edit the code?**
-    > [Clone the repo](https://github.com/AllenNeuralDynamics/breathing-codabench-challenge) and run `marimo edit baseline-cnn-tcn/notebooks/01_explore_data_wasm.py` —
+    > [Clone the repo](https://github.com/AllenNeuralDynamics/breathing-codabench-challenge) and run `marimo edit competition/notebooks/01_explore_data_wasm.py` —
     """)
     return
 

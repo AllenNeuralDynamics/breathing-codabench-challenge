@@ -30,9 +30,10 @@ from scoring.metrics import event_f1, zero_lag_correlation
 from scoring.processing import detect_inhalation_events
 from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 from torch.utils.data import DataLoader
+from zephyr.augment import AugmentConfig
+from zephyr.channels import CHANNEL_NAMES, ChannelSet
+from zephyr.model import BreathingLoss, BreathingNet
 
-from .augment import AugmentConfig
-from .channels import CHANNEL_NAMES, ChannelSet
 from .dataset import (
     STATS_FILENAME,
     ClipEntry,
@@ -43,7 +44,6 @@ from .dataset import (
     reserve_test_sessions,
 )
 from .infer import predict_clip
-from .model import BreathingLoss, BreathingNet
 
 
 def _mean(values: list[dict], key: str) -> float:

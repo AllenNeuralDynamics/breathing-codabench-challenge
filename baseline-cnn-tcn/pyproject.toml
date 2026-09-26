@@ -11,7 +11,7 @@ dependencies = [
     "opencv-python-headless>=4.9",
     "scipy>=1.11",
     "matplotlib>=3.8",
-    "marimo>=0.7",
+    "zephyr",
 ]
 
 [project.optional-dependencies]
@@ -19,6 +19,7 @@ train = ["torch>=2.6,<2.8"]
 
 [tool.uv.sources]
 scoring = { workspace = true }
+zephyr = { git = "https://github.com/AllenNeuralDynamics/zephyr.git", rev = "d9e82bf8eb8e49dcfa9190bba8bc431a8302ec0b" }
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]

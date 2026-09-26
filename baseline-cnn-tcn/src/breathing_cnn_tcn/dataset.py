@@ -14,7 +14,7 @@ non-overlapping, so the reported number is stable between epochs.
 A window is two sequences, not one
 ----------------------------------
 ``window`` counts *output* samples at 60 Hz; input frames live on the
-*selection* grid, joined via :func:`~.model.resample_embeddings`. Each item
+*selection* grid, joined via :func:`zephyr.model.resample_embeddings`. Each item
 carries ``t_in``/``t_out`` alongside the pixels, relative to the window start.
 
 Input frames are read at fractional selection positions spaced ``stretch``
@@ -51,8 +51,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset, Sampler
-
-from .augment import (
+from zephyr.augment import (
     AugmentConfig,
     apply_spatial,
     gather_positions,
@@ -60,7 +59,8 @@ from .augment import (
     rate_targeted_stretch,
     scale_motion_channels,
 )
-from .channels import ALL_CHANNELS, CHANNEL_NAMES, N_CHANNELS, ChannelSet
+from zephyr.channels import ALL_CHANNELS, CHANNEL_NAMES, N_CHANNELS, ChannelSet
+
 from .targets import onset_heatmap
 
 STATS_FILENAME = "channel_stats.json"
@@ -138,7 +138,7 @@ def channel_stats(
     *cache_path* so training and inference cannot disagree.
 
     Always measured over every stored channel, whatever subset a run trains on
-    -- so one cache serves every :class:`~.channels.ChannelSet` with no
+    -- so one cache serves every :class:`zephyr.channels.ChannelSet` with no
     recompute, and two runs can never disagree about a channel's mean.  Slice
     the result with :meth:`~.channels.ChannelSet.take_stats`.
     """

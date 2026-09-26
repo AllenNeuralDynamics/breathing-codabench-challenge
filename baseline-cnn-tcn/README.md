@@ -4,6 +4,10 @@ A learned baseline for the [Breathing from Video Challenge](https://www.codabenc
 a per-frame CNN over a snout crop feeds a dilated TCN that reconstructs the
 thermistor breathing trace.
 
+The network, channel encoding, and training augmentations live in the
+[Zephyr](https://github.com/AllenNeuralDynamics/zephyr) package. This repository
+keeps preprocessing, training, inference, evaluation, and submission packaging.
+
 This package sits alongside `baseline/`, which stays the intentionally simple
 optical-flow reference that participants read first. Nothing here changes that
 package or its Docker image.
@@ -63,7 +67,7 @@ Motion channels are measured against the frame nearest `t - tau`
 and flow mean the same thing at any frame rate.
 
 Selection and output grids are reconciled after the CNN by interpolating frame
-embeddings ([`model.resample_embeddings`](src/breathing_cnn_tcn/model.py)),
+embeddings ([`model.resample_embeddings`](https://github.com/AllenNeuralDynamics/zephyr/blob/main/src/zephyr/model.py)),
 not on pixels.
 
 ## Getting started

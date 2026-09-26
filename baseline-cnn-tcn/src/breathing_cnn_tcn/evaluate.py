@@ -38,12 +38,12 @@ import pandas as pd
 import torch
 from scoring.metrics import score_clip
 from scoring.processing import BREATHING_SIGNAL_COLUMN, TIME_COLUMN
+from zephyr.channels import ChannelSet
+from zephyr.model import BreathingNet
 
-from .channels import ChannelSet
 from .clips import PUBLIC_SPLIT
 from .dataset import ClipEntry, load_manifest
 from .infer import predict_clip
-from .model import BreathingNet
 from .plot_diagnosis import ClipPrediction, rate_breakdown, reserved_grid
 
 

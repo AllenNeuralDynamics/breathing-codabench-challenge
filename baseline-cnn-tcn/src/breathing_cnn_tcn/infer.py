@@ -17,9 +17,9 @@ inference).
 
 import numpy as np
 import torch
+from zephyr.model import BreathingNet
 
 from .dataset import INTERP_MARGIN, ClipEntry
-from .model import BreathingNet
 
 INPUT_MARGIN = INTERP_MARGIN
 """Same slack the training windows keep."""

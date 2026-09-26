@@ -15,10 +15,10 @@ Three grids
 ``output`` (fixed 60 Hz)
     Where the prediction, target and metrics live. Reconciled with the
     selection grid after the CNN by interpolating frame embeddings
-    (:meth:`~.model.BreathingNet.forward`).
+    (:meth:`zephyr.model.BreathingNet.forward`).
 
 Motion channels are measured against the frame nearest ``t - MOTION_TAU_S``
-and normalised by the interval actually achieved; see :mod:`.channels`.
+and normalised by the interval actually achieved; see :mod:`zephyr.channels`.
 
 Frames are decoded from the start of the file with no seeking, so decoded
 frame ``i`` stays aligned with row ``i`` of the timestamp file.
@@ -62,9 +62,7 @@ import cv2
 import numpy as np
 import pandas as pd
 from scoring.processing import CANONICAL_BREATHING_SAMPLING_RATE
-
-from .annotate import clip_boxes
-from .channels import (
+from zephyr.channels import (
     CHANNEL_NAMES,
     FLOW_CLIP_PX,
     FLOW_SCALE_PX,
@@ -74,6 +72,8 @@ from .channels import (
     encode_stack,
     make_flow_estimator,
 )
+
+from .annotate import clip_boxes
 from .clips import PUBLIC_SPLIT, ClipRef, discover_clips
 from .targets import load_target, onset_heatmap
 from .video import Box, iter_frames, probe_size

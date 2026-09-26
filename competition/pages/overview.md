@@ -157,7 +157,7 @@ scrub the video frame-by-frame against the breathing trace:
 
 ```bash
 # From the repo root (the notebook defaults to ./data/packaged)
-uv run marimo edit baseline-cnn-tcn/notebooks/01_explore_data.py
+uv run --with marimo marimo edit competition/notebooks/01_explore_data.py
 ```
 
 Pick a clip and a camera from the dropdowns at the top. The detection sliders let
