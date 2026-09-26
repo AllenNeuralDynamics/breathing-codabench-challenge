@@ -45,28 +45,16 @@ The data sits in a **public** S3 prefix — no AWS account or credentials needed
 s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/3fd049f3b2d5bb39409611187918ac41ce1f8b0a0d8d113a3526e5cf5a2ebc08/public/
 ```
 
-### Option 1 — download script
-
-```bash
-uv run competition/public_data/download_data.py --dest ./data
-```
-
-This is a thin wrapper around `aws s3 sync --no-sign-request` and fetches
-everything, preserving the `train/` and `test/` sub-directories.
-
-### Option 2 — AWS CLI directly
-
-Useful when you want a subset. The full dataset is **~49 GB** (train ~21 GB,
+Use the AWS CLI to download everything or just the public training split.
+The full dataset is **~49 GB** (train ~21 GB,
 test ~28 GB), so grabbing a couple of clips first is usually the right move.
 
 ```bash
-S3=s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/3fd049f3b2d5bb39409611187918ac41ce1f8b0a0d8d113a3526e5cf5a2ebc08/public
-
 # Everything
-aws s3 sync --no-sign-request $S3/ ./data/
+aws s3 sync --no-sign-request s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/3fd049f3b2d5bb39409611187918ac41ce1f8b0a0d8d113a3526e5cf5a2ebc08/public/ ./data/
 
 # Just the train split
-aws s3 sync --no-sign-request $S3/train/ ./data/train/
+aws s3 sync --no-sign-request s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/3fd049f3b2d5bb39409611187918ac41ce1f8b0a0d8d113a3526e5cf5a2ebc08/public/train/ ./data/train/
 ```
 
 ---

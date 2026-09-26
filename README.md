@@ -49,10 +49,11 @@ uv sync --all-packages
 ### 2. Download the data
 
 ```bash
-uv run competition/public_data/download_data.py --dest ./data
+aws s3 sync --no-sign-request s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/3fd049f3b2d5bb39409611187918ac41ce1f8b0a0d8d113a3526e5cf5a2ebc08/public/ ./data/
 ```
 
-No AWS account required — the bucket is public. See
+Install the AWS CLI first if needed. No AWS account or credentials are required —
+the bucket is public. See
 [Download the data](competition/pages/overview.md#download-the-data) and
 [Data layout](competition/pages/overview.md#data-layout) in the overview for
 the S3 path, directory structure, and file schema.
