@@ -1,0 +1,3 @@
+[submodule "baseline/zephyr"]
+	path = baseline/zephyr
+	url = https://github.com/AllenNeuralDynamics/zephyr.git

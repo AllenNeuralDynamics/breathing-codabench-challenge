@@ -8,7 +8,7 @@ exhale onsets, and inhale onsets otherwise, fall back to
 
 Requires the split to already be preprocessed (see preprocess.py)::
 
-    python -m breathing_cnn_tcn.submit --checkpoint runs/<run>/best.pt
+    python -m baseline.submit --checkpoint runs/<run>/best.pt
 
 Score the result with the scoring Docker image against submission/<run> --
 see scoring/README.md.
@@ -27,11 +27,10 @@ from scoring.processing import (
     TIME_COLUMN,
     detect_inhalation_events,
 )
-
-from .clips import PRIVATE_SPLIT
-from .dataset import ClipEntry, load_manifest
-from .evaluate import load_checkpoint, predict_entry
-from .infer import predict_clip
+from zephyr.clips import PRIVATE_SPLIT
+from zephyr.dataset import ClipEntry, load_manifest
+from zephyr.evaluate import load_checkpoint, predict_entry
+from zephyr.infer import predict_clip
 
 # Onset-head peak extraction, matching plot_diagnosis.py's convention.
 ONSET_HEAD_HEIGHT = 0.4

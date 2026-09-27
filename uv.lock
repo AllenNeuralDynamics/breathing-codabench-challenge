@@ -18,9 +18,8 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "breathing-baseline",
     "breathing-challenge",
-    "breathing-cnn-tcn",
+    "breathing-baseline",
     "scoring",
 ]
 
@@ -53,30 +52,6 @@ wheels = [
 ]
 
 [[package]]
-name = "breathing-baseline"
-source = { editable = "baseline" }
-dependencies = [
-    { name = "matplotlib" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "pandas" },
-    { name = "pyarrow" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "scoring" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "matplotlib", specifier = ">=3.8" },
-    { name = "numpy", specifier = ">=1.26" },
-    { name = "pandas", specifier = ">=2.0" },
-    { name = "pyarrow", specifier = ">=14.0" },
-    { name = "scipy", specifier = ">=1.11" },
-    { name = "scoring", editable = "scoring" },
-]
-
-[[package]]
 name = "breathing-challenge"
 version = "0.0.0"
 source = { virtual = "." }
@@ -92,41 +67,32 @@ dev = [
 dev = [{ name = "ruff" }]
 
 [[package]]
-name = "breathing-cnn-tcn"
-source = { editable = "baseline-cnn-tcn" }
+name = "breathing-baseline"
+source = { editable = "baseline" }
 dependencies = [
-    { name = "matplotlib" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "opencv-python-headless" },
     { name = "pandas" },
     { name = "pyarrow" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "scoring" },
-    { name = "zephyr" },
-]
-
-[package.optional-dependencies]
-train = [
     { name = "torch", version = "2.7.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
     { name = "torch", version = "2.7.1+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "zephyr" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "matplotlib", specifier = ">=3.8" },
     { name = "numpy", specifier = ">=1.26" },
-    { name = "opencv-python-headless", specifier = ">=4.9" },
     { name = "pandas", specifier = ">=2.0" },
     { name = "pyarrow", specifier = ">=14.0" },
     { name = "scipy", specifier = ">=1.11" },
     { name = "scoring", editable = "scoring" },
-    { name = "torch", marker = "(sys_platform == 'linux' and extra == 'train') or (sys_platform == 'win32' and extra == 'train')", specifier = ">=2.6,<2.8", index = "https://download.pytorch.org/whl/cu128" },
-    { name = "torch", marker = "sys_platform != 'linux' and sys_platform != 'win32' and extra == 'train'", specifier = ">=2.6,<2.8" },
-    { name = "zephyr", git = "https://github.com/AllenNeuralDynamics/zephyr.git?rev=d9e82bf8eb8e49dcfa9190bba8bc431a8302ec0b" },
+    { name = "torch", marker = "sys_platform == 'linux' or sys_platform == 'win32'", specifier = ">=2.6,<2.8", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "torch", marker = "sys_platform != 'linux' and sys_platform != 'win32'", specifier = ">=2.6,<2.8" },
+    { name = "zephyr", editable = "baseline/zephyr" },
 ]
-provides-extras = ["train"]
 
 [[package]]
 name = "colorama"
@@ -1569,13 +1535,30 @@ wheels = [
 [[package]]
 name = "zephyr"
 version = "0.1.0"
-source = { git = "https://github.com/AllenNeuralDynamics/zephyr.git?rev=d9e82bf8eb8e49dcfa9190bba8bc431a8302ec0b#d9e82bf8eb8e49dcfa9190bba8bc431a8302ec0b" }
+source = { editable = "baseline/zephyr" }
 dependencies = [
+    { name = "matplotlib" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "opencv-python-headless" },
+    { name = "pandas" },
+    { name = "pyarrow" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "torch", version = "2.7.1", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
     { name = "torch", version = "2.7.1+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
+
+[package.metadata]
+requires-dist = [
+    { name = "matplotlib", specifier = ">=3.8" },
+    { name = "numpy", specifier = ">=1.26" },
+    { name = "opencv-python-headless", specifier = ">=4.9" },
+    { name = "pandas", specifier = ">=2.0" },
+    { name = "pyarrow", specifier = ">=14.0" },
+    { name = "scipy", specifier = ">=1.11" },
+    { name = "torch", specifier = ">=2.6,<2.8" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.14" }]

@@ -49,6 +49,7 @@ docs/
 runs*/*
 submission/*
 benchmarks/*
+baseline/artifacts/frames/
 
 # env files
 *.env
