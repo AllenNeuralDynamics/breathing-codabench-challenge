@@ -33,7 +33,6 @@ from .dataset import load_manifest
 from .evaluate import load_checkpoint, load_test_strata, truth_frame
 from .infer import predict_clip
 
-
 HEAD_FILENAME = "head_evaluation.json"
 HEAD_THRESHOLD = 0.5
 HEAD_MIN_DISTANCE_S = 0.05
@@ -81,7 +80,7 @@ def _head_summary(rows: list[dict]) -> dict[str, float | int]:
         "head_inhale_f1_sd": (
             float(values.std(ddof=1)) if len(values) > 1 else float("nan")
         ),
-        "head_inhale_f1_n": int(len(values)),
+        "head_inhale_f1_n": len(values),
     }
 
 
@@ -119,9 +118,7 @@ def evaluate_head_job(
         raise FileNotFoundError(f"missing checkpoint: {checkpoint}")
 
     device = torch.device(config.device)
-    amp_dtype = {"bf16": torch.bfloat16, "fp16": torch.float16, "off": None}[
-        config.amp
-    ]
+    amp_dtype = {"bf16": torch.bfloat16, "fp16": torch.float16, "off": None}[config.amp]
     model, mean, std, _ = load_checkpoint(checkpoint, device)
     _, entries = load_manifest(config.features_dir, config.test_split, config.camera)
     strata = load_test_strata(config.split_manifest)
@@ -175,7 +172,7 @@ def evaluate_head_job(
                 "session_idx": entry.session_idx,
                 "part": entry.part,
                 "head_inhale_f1": score.inhale_f1,
-                "n_predicted_head_events": int(len(head_indices)),
+                "n_predicted_head_events": len(head_indices),
                 "head_probability_min": float(onset_probability.min()),
                 "head_probability_max": float(onset_probability.max()),
                 "head_probability_mean": float(onset_probability.mean()),
@@ -492,7 +489,9 @@ def _plot_losses_per_network(config: BenchmarkConfig) -> list[dict]:
     representations = list(REPRESENTATION_LABELS)
     objectives = list(OBJECTIVE_LABELS)
     seeds = list(config.seeds)
-    jobs = {(job.representation, job.objective.name, job.seed): job for job in config.jobs()}
+    jobs = {
+        (job.representation, job.objective.name, job.seed): job for job in config.jobs()
+    }
     fig, axes = plt.subplots(
         len(representations) * len(objectives),
         len(seeds),
@@ -654,7 +653,9 @@ def _plot_performance(config: BenchmarkConfig, rows: list[dict]) -> None:
 
     correlation_values = [float(row["correlation"]) for row in rows]
     f1_values = [float(row["inhale_f1"]) for row in rows]
-    f1_values += [float(row["head_inhale_f1"]) for row in rows if "head_inhale_f1" in row]
+    f1_values += [
+        float(row["head_inhale_f1"]) for row in rows if "head_inhale_f1" in row
+    ]
     limits = {}
     for name, values in (("correlation", correlation_values), ("f1", f1_values)):
         low, high = min(values), max(values)
@@ -710,7 +711,9 @@ def _plot_performance(config: BenchmarkConfig, rows: list[dict]) -> None:
             ax.set_ylim(*limits[limit_name])
             if row_index == 0:
                 ax.set_title(
-                    "Signal correlation" if column_index == 0 else "Inhalation event detection",
+                    "Signal correlation"
+                    if column_index == 0
+                    else "Inhalation event detection",
                     fontweight="bold",
                 )
             ax.set_ylabel(ylabel)
@@ -791,7 +794,9 @@ def _plot_losses(config: BenchmarkConfig) -> list[dict]:
     representations = list(REPRESENTATION_LABELS)
     objectives = list(OBJECTIVE_LABELS)
     seeds = list(config.seeds)
-    jobs = {(job.representation, job.objective.name, job.seed): job for job in config.jobs()}
+    jobs = {
+        (job.representation, job.objective.name, job.seed): job for job in config.jobs()
+    }
     seed_colors = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#7A4EAB"]
     fig, axes = plt.subplots(
         len(representations),
@@ -819,7 +824,9 @@ def _plot_losses(config: BenchmarkConfig) -> list[dict]:
                 loss = np.asarray([row["train_loss"] for row in history], dtype=float)
                 smooth_x, smooth = _rolling_mean(loss)
                 ax.plot(epochs, loss, color=color, alpha=0.12, linewidth=0.7)
-                ax.plot(smooth_x, smooth, color=color, linewidth=1.6, label=f"Seed {seed}")
+                ax.plot(
+                    smooth_x, smooth, color=color, linewidth=1.6, label=f"Seed {seed}"
+                )
                 final_mean = float(loss[-10:].mean())
                 convergence.append(
                     {
@@ -885,10 +892,7 @@ def _format_cell(row: dict, metric: str, best: float | None) -> str:
     mean = row[f"{metric}_mean"]
     if mean is None:
         return "N/A"
-    cell = (
-        f'{mean:.4f} ({row[f"{metric}_min"]:.4f}/'
-        f'{row[f"{metric}_max"]:.4f})'
-    )
+    cell = f"{mean:.4f} ({row[f'{metric}_min']:.4f}/{row[f'{metric}_max']:.4f})"
     return f"**{cell}**" if best is not None and np.isclose(mean, best) else cell
 
 

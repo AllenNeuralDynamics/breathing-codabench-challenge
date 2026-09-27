@@ -43,9 +43,7 @@ class BenchmarkConfigTests(unittest.TestCase):
         self.assertIn("--val-fraction", command)
         self.assertEqual(command[command.index("--val-fraction") + 1], "0")
         self.assertIn("--no-reserve-test-sessions", command)
-        self.assertEqual(
-            command[command.index("--channels") + 1], "gray+diff+flow"
-        )
+        self.assertEqual(command[command.index("--channels") + 1], "gray+diff+flow")
         self.assertEqual(command[command.index("--w-onset") + 1], "0.5")
         self.assertNotIn("--resume", command)
 
@@ -141,9 +139,7 @@ class BenchmarkConfigTests(unittest.TestCase):
                 json.dumps(
                     {
                         "summary_by_session": metrics,
-                        "per_session": [
-                            {"session_idx": 1, "n_clips": 2} | metrics
-                        ],
+                        "per_session": [{"session_idx": 1, "n_clips": 2} | metrics],
                         "strata": {
                             "new_animals": {
                                 "sessions": [1],
@@ -181,7 +177,9 @@ class BenchmarkDataTests(unittest.TestCase):
         return {"subject_id": str(subject), "video_index": video_index}
 
     def test_download_is_an_overlay_not_a_flat_merge(self):
-        commands = download_commands("s3://bucket/root", Path("dataset"), "face", dry_run=True)
+        commands = download_commands(
+            "s3://bucket/root", Path("dataset"), "face", dry_run=True
+        )
         self.assertEqual(len(commands), 4)
         self.assertIn(str(Path("dataset") / "train"), commands[0])
         self.assertIn(str(Path("dataset") / "test"), commands[1])

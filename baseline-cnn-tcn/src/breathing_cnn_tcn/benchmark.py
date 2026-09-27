@@ -282,8 +282,7 @@ def run_jobs(
     if not dry_run:
         config.output_root.mkdir(parents=True, exist_ok=True)
         train_manifest = (
-            config.features_dir
-            / f"manifest_{config.train_split}_{config.camera}.json"
+            config.features_dir / f"manifest_{config.train_split}_{config.camera}.json"
         )
         (config.output_root / "plan.json").write_text(
             json.dumps(
@@ -292,9 +291,7 @@ def run_jobs(
                     "config": str(config.path),
                     "config_sha256": config.config_sha256,
                     "train_manifest_sha256": _sha256_if_present(train_manifest),
-                    "split_manifest_sha256": _sha256_if_present(
-                        config.split_manifest
-                    ),
+                    "split_manifest_sha256": _sha256_if_present(config.split_manifest),
                     "jobs": [job.job_id for job in config.jobs()],
                 }
                 | _git_provenance(),
@@ -355,7 +352,9 @@ def run_jobs(
         metadata_path.write_text(json.dumps(metadata, indent=2))
 
 
-def _evaluation_rows(config: BenchmarkConfig, jobs: list[Job]) -> tuple[list[dict], list[dict]]:
+def _evaluation_rows(
+    config: BenchmarkConfig, jobs: list[Job]
+) -> tuple[list[dict], list[dict]]:
     seed_rows: list[dict] = []
     session_rows: list[dict] = []
     for job in jobs:
@@ -397,10 +396,7 @@ def _evaluation_rows(config: BenchmarkConfig, jobs: list[Job]) -> tuple[list[dic
 def _across_seed_rows(seed_rows: list[dict]) -> list[dict]:
     output: list[dict] = []
     keys = sorted(
-        {
-            (row["representation"], row["objective"], row["stratum"])
-            for row in seed_rows
-        }
+        {(row["representation"], row["objective"], row["stratum"]) for row in seed_rows}
     )
     for representation, objective, stratum in keys:
         members = [
@@ -455,7 +451,9 @@ def collect(
 ) -> None:
     if not dry_run:
         preflight(config, evaluation=True)
-    incomplete = [job.job_id for job in jobs if not (config.run_dir(job) / "best.pt").exists()]
+    incomplete = [
+        job.job_id for job in jobs if not (config.run_dir(job) / "best.pt").exists()
+    ]
     if incomplete:
         raise SystemExit(
             f"cannot collect: {len(incomplete)} job(s) have no best.pt: "
@@ -505,7 +503,9 @@ def main() -> None:
     collect_parser = subparsers.add_parser(
         "collect", help="Evaluate completed jobs and write aggregate tables."
     )
-    collect_parser.add_argument("--job", action="append", help="Collect only this job ID.")
+    collect_parser.add_argument(
+        "--job", action="append", help="Collect only this job ID."
+    )
     collect_parser.add_argument("--force", action="store_true")
     collect_parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()

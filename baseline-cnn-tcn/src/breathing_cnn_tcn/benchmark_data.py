@@ -84,7 +84,9 @@ def run_download(s3_root: str, destination: Path, camera: str, dry_run: bool) ->
     # --no-sign-request needs no configured profile. A stale workstation-wide
     # profile name would otherwise make even anonymous S3 access fail early.
     environment.pop("AWS_PROFILE", None)
-    for command in download_commands(s3_root.rstrip("/"), destination, camera, dry_run=dry_run):
+    for command in download_commands(
+        s3_root.rstrip("/"), destination, camera, dry_run=dry_run
+    ):
         print(subprocess.list2cmdline(command), flush=True)
         subprocess.run(command, check=True, env=environment)
 
@@ -128,7 +130,9 @@ def validate(destination: Path, camera: str) -> dict:
                 for selected_camera in cameras:
                     required += [
                         destination / split / f"video_{selected_camera}_{suffix}.mp4",
-                        destination / split / f"video_{selected_camera}_{suffix}.parquet",
+                        destination
+                        / split
+                        / f"video_{selected_camera}_{suffix}.parquet",
                     ]
                 missing += [str(path) for path in required if not path.exists()]
     if missing:

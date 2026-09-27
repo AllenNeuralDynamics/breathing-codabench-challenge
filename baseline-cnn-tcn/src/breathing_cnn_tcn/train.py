@@ -562,42 +562,42 @@ def main() -> None:
         mid-run would otherwise not be the same schedule.
         """
         state = {
-                "model": (weights or model).state_dict(),
-                "model_live": model.state_dict(),
-                "ema": ema.state_dict() if ema is not None else None,
-                "ema_decay": args.ema_decay,
-                "optimiser": optimiser.state_dict(),
-                "scheduler": scheduler.state_dict(),
-                "scaler": scaler.state_dict(),
-                "epoch": epoch,
-                "best": best,
-                "since_best": since_best,
-                "history": history,
-                "global_step": global_step,
-                "torch_rng_state": torch.get_rng_state(),
-                "cuda_rng_state_all": (
-                    torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
-                ),
-                "numpy_rng_state": np.random.get_state(),
-                "python_rng_state": random.getstate(),
-                "test_sessions": test_sessions,
-                "train_split": args.split,
-                "trained_sessions": sorted({e.session_idx for e in train_entries}),
-                # Not part of state_dict, but the weights are unusable without
-                # it: it fixes the first conv's input width and which planes of
-                # the stored array to feed it.
-                "channels": list(channel_set.names),
-                # Full-width, over every stored channel, so checkpoints trained
-                # on different selections stay comparable.  Consumers slice with
-                # ChannelSet.take_stats.
-                "mean": mean,
-                "std": std,
-                "args": vars(args)
-                | {k: str(v) for k, v in vars(args).items() if isinstance(v, Path)},
-                "feature_config": config,
-                "metrics": metrics,
-                "per_clip": per_clip,
-            }
+            "model": (weights or model).state_dict(),
+            "model_live": model.state_dict(),
+            "ema": ema.state_dict() if ema is not None else None,
+            "ema_decay": args.ema_decay,
+            "optimiser": optimiser.state_dict(),
+            "scheduler": scheduler.state_dict(),
+            "scaler": scaler.state_dict(),
+            "epoch": epoch,
+            "best": best,
+            "since_best": since_best,
+            "history": history,
+            "global_step": global_step,
+            "torch_rng_state": torch.get_rng_state(),
+            "cuda_rng_state_all": (
+                torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
+            ),
+            "numpy_rng_state": np.random.get_state(),
+            "python_rng_state": random.getstate(),
+            "test_sessions": test_sessions,
+            "train_split": args.split,
+            "trained_sessions": sorted({e.session_idx for e in train_entries}),
+            # Not part of state_dict, but the weights are unusable without
+            # it: it fixes the first conv's input width and which planes of
+            # the stored array to feed it.
+            "channels": list(channel_set.names),
+            # Full-width, over every stored channel, so checkpoints trained
+            # on different selections stay comparable.  Consumers slice with
+            # ChannelSet.take_stats.
+            "mean": mean,
+            "std": std,
+            "args": vars(args)
+            | {k: str(v) for k, v in vars(args).items() if isinstance(v, Path)},
+            "feature_config": config,
+            "metrics": metrics,
+            "per_clip": per_clip,
+        }
         # Keep the previous checkpoint intact until the replacement is fully
         # serialized. A process or machine failure during torch.save then costs
         # at most one epoch instead of corrupting the only resumable file.
