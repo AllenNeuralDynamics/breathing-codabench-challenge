@@ -5,6 +5,7 @@ __pycache__/
 
 # Virtual environments
 .venv/
+.worktrees/
 venv/
 ENV/
 env/
@@ -48,6 +49,7 @@ docs/
 runs*/*
 submission/*
 benchmarks/*
+baseline/artifacts/frames/
 
 # env files
 *.env

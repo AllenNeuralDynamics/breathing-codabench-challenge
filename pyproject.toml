@@ -7,7 +7,6 @@ requires-python = ">=3.11"
 members = [
     "scoring",
     "baseline",
-    "baseline-cnn-tcn",
 ]
 
 [tool.uv.sources]

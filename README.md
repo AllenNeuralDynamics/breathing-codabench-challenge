@@ -31,7 +31,7 @@ The data schema, download instructions, and worked examples for participants liv
 
 ### 1. Set up your environment
 
-This repo uses [uv](https://docs.astral.sh/uv/) as its package manager and is a workspace of three packages: `scoring`, `baseline`, `baseline-cnn-tcn`.
+This repo uses [uv](https://docs.astral.sh/uv/) as its package manager and is a workspace of two packages: `scoring` and `baseline`. The baseline package uses Zephyr from a pinned Git submodule.
 
 ```bash
 # Install uv (if you don't have it)
@@ -39,7 +39,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh   # macOS / Linux
 # or: winget install astral-sh.uv                  # Windows
 
 # Clone the repo
-git clone https://github.com/AllenNeuralDynamics/breathing-codabench-challenge
+git clone --recurse-submodules https://github.com/AllenNeuralDynamics/breathing-codabench-challenge
 cd breathing-codabench-challenge
 
 # Install everything
@@ -49,10 +49,11 @@ uv sync --all-packages
 ### 2. Download the data
 
 ```bash
-uv run competition/public_data/download_data.py --dest ./data
+aws s3 sync --no-sign-request s3://aind-scratch-data/vr-foraging/codabench-breathing-challenge/3fd049f3b2d5bb39409611187918ac41ce1f8b0a0d8d113a3526e5cf5a2ebc08/public/ ./data/
 ```
 
-No AWS account required — the bucket is public. See
+Install the AWS CLI first if needed. No AWS account or credentials are required —
+the bucket is public. See
 [Download the data](competition/pages/overview.md#download-the-data) and
 [Data layout](competition/pages/overview.md#data-layout) in the overview for
 the S3 path, directory structure, and file schema.
@@ -60,7 +61,7 @@ the S3 path, directory structure, and file schema.
 ### 3. Explore the data
 
 ```bash
-uv run marimo edit baseline-cnn-tcn/notebooks/01_explore_data.py
+uv run --with marimo marimo edit competition/notebooks/01_explore_data.py
 ```
 
 See [Explore the data](competition/pages/overview.md#explore-the-data) for a
@@ -69,14 +70,13 @@ walkthrough, plus the reusable signal-processing helpers exposed by the
 
 ### 4. Run a baseline
 
-Two are provided:
+One is provided:
 
 | Baseline                                          | What it is                                                          |
 | ------------------------------------------------- | ------------------------------------------------------------------- |
-| [`baseline/`](baseline/README.md)                 | TODO.                                                               |
-| [`baseline-cnn-tcn/`](baseline-cnn-tcn/README.md) | A learned CNN + TCN model: crop, preprocess, train, evaluate, plot. |
+| [`baseline/`](baseline/README.md)                 | Run Zephyr's CNN + TCN workflow and the challenge-specific official scoring and submission adapter. |
 
-Each README covers its own setup, training/inference, and Docker image.
+The baseline README covers setup, training, and local scoring.
 
 ### 5. Score locally
 
@@ -92,8 +92,8 @@ it fetches ground-truth parquets from S3 and scores each submitted clip with
 `scoring.metrics.score_clip`. That same function is what to score against
 locally — see the `Score` dataclass in
 [`scoring/src/scoring/metrics.py`](scoring/src/scoring/metrics.py) for every
-metric it computes. `baseline-cnn-tcn`'s
-[`evaluate.py`](baseline-cnn-tcn/src/breathing_cnn_tcn/evaluate.py) is a
+metric it computes. `baseline`'s
+[`evaluate.py`](baseline/src/baseline/evaluate.py) is a
 working example of scoring predictions this way against local held-out clips.
 
 The composite leaderboard scalar is still being finalised — see
@@ -102,12 +102,14 @@ current participant-facing docs.
 
 ### 6. Package and submit
 
-`baseline-cnn-tcn`'s [`submit.py`](baseline-cnn-tcn/src/breathing_cnn_tcn/submit.py)
+`baseline`'s [`submit.py`](baseline/src/baseline/submit.py)
 packages a checkpoint's predictions into the submission format (private
 split must already be preprocessed, see its module docstring):
 
 ```bash
-uv run python -m breathing_cnn_tcn.submit --checkpoint runs/<run>/best.pt
+uv run --package breathing-baseline python -m baseline.submit \
+  --checkpoint baseline/zephyr/runs_all/zephyr/<run>/best.pt \
+  --features-dir baseline/zephyr/data/features
 cd submission/<run> && zip -r ../submission.zip res
 ```
 
@@ -117,7 +119,7 @@ Then upload `submission.zip` on the [Codabench competition page](https://www.cod
 
 File names mirror the packaged dataset's own
 `{stream}_{session}_part_{part}.parquet` convention (see
-[`clips.py`](baseline-cnn-tcn/src/breathing_cnn_tcn/clips.py)) — `clip_id`
+[`clips.py`](baseline/zephyr/src/zephyr/clips.py)) — `clip_id`
 below is `{session}_part_{part}`, e.g. `2_part_1`. **All three files are
 required for every clip you want scored:**
 

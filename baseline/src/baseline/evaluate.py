@@ -8,11 +8,13 @@ Anything less faithful would report a number the leaderboard will not reproduce.
 What this is for
 ----------------
 Two protocols are supported. Legacy development runs score sessions reserved in
-``baseline-cnn-tcn/artifacts/holdout_sessions.json``. The factorial benchmark
-instead trains on the complete ``train`` split and supplies the organizer's
-``split.json`` while scoring the independent ``test`` split. In either protocol
-the estimate is consumable: every look influences what gets tried next, so
-score models only after the training choices are frozen.
+``baseline/artifacts/holdout_sessions.json`` -- the only clips nothing trained
+on, validated on, or selected a checkpoint against, so they are the one
+unbiased estimate available locally. The factorial benchmark instead trains on
+the complete ``train`` split and supplies the organizer's ``split.json`` while
+scoring the independent ``test`` split. In either protocol the estimate is
+consumable: every look influences what gets tried next, so score a model you
+are ready to commit to, not every intermediate.
 
 Several ``--checkpoint`` paths are ensembled, each z-scored before averaging --
 the models are trained on a correlation loss that leaves output scale free, so
@@ -25,8 +27,8 @@ onset-head probability, so ``--plot`` requires exactly one ``--checkpoint``.
 
 CLI
 ---
-    python -m breathing_cnn_tcn.evaluate \\
-        --checkpoint runs/baseline-cnn-tcn/<run>/best.pt --plot
+    python -m baseline.evaluate \\
+        --checkpoint runs_all/zephyr/<run>/best.pt --plot
 """
 
 import argparse
@@ -38,76 +40,10 @@ import pandas as pd
 import torch
 from scoring.metrics import score_clip
 from scoring.processing import BREATHING_SIGNAL_COLUMN, TIME_COLUMN
-
-from .channels import ChannelSet
-from .clips import PUBLIC_SPLIT
-from .dataset import ClipEntry, load_manifest
-from .infer import predict_clip
-from .model import BreathingNet
-from .plot_diagnosis import ClipPrediction, rate_breakdown, reserved_grid
-
-
-def load_checkpoint(
-    path: Path, device: torch.device
-) -> tuple[BreathingNet, np.ndarray, np.ndarray, dict]:
-    """Rebuild a model from a training checkpoint, with its own normalisation.
-
-    ``model`` holds whichever weights the run selected -- the EMA copy when
-    averaging was enabled -- so nothing here needs to know how it was trained.
-
-    The channel selection comes from the checkpoint, not from the current
-    manifest: it fixes the first convolution's shape, so reading it from
-    anywhere else would build a model the weights do not fit.  Checkpoints
-    written before ``--channels`` existed have no such field and trained on
-    every stored channel, which their own manifest config records.  Returned
-    ``mean``/``std`` stay full-width -- :func:`~.infer.predict_clip` slices
-    them to the model.
-    """
-    state = torch.load(path, map_location=device, weights_only=False)
-    config = state["feature_config"]
-    channels = ChannelSet.parse(state.get("channels") or config["channel_names"])
-    model = BreathingNet(channels=channels).to(device)
-    model.load_state_dict(state["model"])
-    model.eval()
-    return model, state["mean"], state["std"], state
-
-
-def zscore(x: np.ndarray) -> np.ndarray:
-    scale = x.std()
-    return (x - x.mean()) / (scale if scale > 0 else 1.0)
-
-
-def predict_entry(
-    models: list[tuple[BreathingNet, np.ndarray, np.ndarray]],
-    entry: ClipEntry,
-    device: torch.device,
-    *,
-    window: int,
-    frame_chunk: int,
-    amp_dtype: torch.dtype | None,
-) -> np.ndarray:
-    """Ensemble prediction for one clip, z-scored per model then averaged.
-
-    Each model is z-scored before averaging: they are trained on a correlation
-    loss that leaves output scale free, so averaging raw outputs would weight by
-    whichever run happened to settle on the largest amplitude.
-    """
-    stack = [
-        zscore(
-            predict_clip(
-                model,
-                entry,
-                mean,
-                std,
-                window=window,
-                device=device,
-                frame_chunk=frame_chunk,
-                amp_dtype=amp_dtype,
-            )[0]
-        )
-        for model, mean, std in models
-    ]
-    return zscore(np.mean(stack, axis=0))
+from zephyr.clips import PUBLIC_SPLIT
+from zephyr.dataset import load_manifest
+from zephyr.evaluate import load_checkpoint, predict_entry
+from zephyr.plot_diagnosis import ClipPrediction, rate_breakdown, reserved_grid
 
 
 def truth_frame(packaged_root: Path, split: str, session_idx: int, part: int):
@@ -173,7 +109,7 @@ def main() -> None:
     parser.add_argument(
         "--holdout-json",
         type=Path,
-        default=Path("baseline-cnn-tcn/artifacts/holdout_sessions.json"),
+        default=Path("baseline/artifacts/holdout_sessions.json"),
     )
     parser.add_argument(
         "--split-manifest",

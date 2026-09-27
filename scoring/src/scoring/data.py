@@ -1,7 +1,7 @@
 """Location of the competition dataset in S3.
 
 Single source of truth for every script/notebook that needs to find the data.
-The one exception is `baseline-cnn-tcn/notebooks/01_explore_data_wasm.py`,
+The one exception is `competition/notebooks/01_explore_data_wasm.py`,
 which runs in-browser via Pyodide and cannot import workspace packages --
 keep its hardcoded bucket and prefix in sync with this file by hand.
 

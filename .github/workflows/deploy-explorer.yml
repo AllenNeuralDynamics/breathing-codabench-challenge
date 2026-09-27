@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - "baseline-cnn-tcn/notebooks/01_explore_data_wasm.py"
+      - "competition/notebooks/01_explore_data_wasm.py"
+      - "competition/notebooks/utils.py"
       - ".github/workflows/deploy-explorer.yml"
   workflow_dispatch:          # let maintainers trigger it manually
 
@@ -29,9 +30,9 @@ jobs:
 
       - name: Export marimo notebook → WASM HTML
         run: |
-          uv run --project baseline-cnn-tcn marimo export html-wasm \
-            baseline-cnn-tcn/notebooks/01_explore_data_wasm.py \
-            -o site/index.html --mode run
+          uvx --from marimo==0.24.0 marimo export html-wasm \
+            competition/notebooks/01_explore_data_wasm.py \
+            -o site/index.html --mode run --no-sandbox
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
