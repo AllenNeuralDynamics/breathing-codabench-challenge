@@ -17,6 +17,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          submodules: true
 
       - uses: docker/login-action@v3
         with:

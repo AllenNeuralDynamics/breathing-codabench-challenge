@@ -31,7 +31,7 @@ The data schema, download instructions, and worked examples for participants liv
 
 ### 1. Set up your environment
 
-This repo uses [uv](https://docs.astral.sh/uv/) as its package manager and is a workspace of two packages: `scoring` and `baseline`. The CNN + TCN package consumes Zephyr from a pinned Git submodule.
+This repo uses [uv](https://docs.astral.sh/uv/) as its package manager and is a workspace of two packages: `scoring` and `baseline`. The baseline package uses Zephyr from a pinned Git submodule.
 
 ```bash
 # Install uv (if you don't have it)
@@ -70,13 +70,13 @@ walkthrough, plus the reusable signal-processing helpers exposed by the
 
 ### 4. Run a baseline
 
-Two are provided:
+One is provided:
 
 | Baseline                                          | What it is                                                          |
 | ------------------------------------------------- | ------------------------------------------------------------------- |
 | [`baseline/`](baseline/README.md)                 | Run Zephyr's CNN + TCN workflow and the challenge-specific official scoring and submission adapter. |
 
-Each README covers its own setup, training/inference, and Docker image.
+The baseline README covers setup, training, and local scoring.
 
 ### 5. Score locally
 

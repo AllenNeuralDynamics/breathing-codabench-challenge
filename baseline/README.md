@@ -14,15 +14,15 @@ git submodule update --init --recursive
 uv sync --all-packages
 ```
 
-If you trained from the checked-out `baseline/zephyr` submodule, run the
-official held-out score from the challenge repository root:
-
 The scorer needs the raw labelled thermistor parquet files under
 `baseline/zephyr/data/train/` and Zephyr's preprocessed feature manifests and
 arrays under `baseline/zephyr/data/features/`. These are the paths supplied
 below with `--packaged-root` and `--features-dir`; if your data lives elsewhere,
 pass its locations explicitly. The raw thermistor files are used for scoring,
 while the features are used to generate predictions.
+
+If you trained from the checked-out `baseline/zephyr` submodule, run the
+official held-out score from the challenge repository root:
 
 ```bash
 uv run --package breathing-baseline \
