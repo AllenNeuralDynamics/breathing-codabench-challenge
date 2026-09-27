@@ -67,7 +67,7 @@ def _head_event_indices(probability: np.ndarray, times: np.ndarray) -> np.ndarra
     if len(times) < 2:
         return np.empty(0, dtype=int)
     sampling_rate = 1.0 / float(np.median(np.diff(times)))
-    distance = max(1, int(round(HEAD_MIN_DISTANCE_S * sampling_rate)))
+    distance = max(1, round(HEAD_MIN_DISTANCE_S * sampling_rate))
     peaks, _ = find_peaks(probability, height=HEAD_THRESHOLD, distance=distance)
     return peaks.astype(int)
 
@@ -317,7 +317,9 @@ def _plot_performance_detailed(config: BenchmarkConfig, rows: list[dict]) -> Non
     strata = list(STRATUM_LABELS)
     x = np.arange(len(representations), dtype=float)
     objective_offsets = {"signal": -0.14, "multitask": 0.14}
-    seed_jitter = dict(zip([17, 42, 101, 202, 314], np.linspace(-0.045, 0.045, 5)))
+    seed_jitter = dict(
+        zip([17, 42, 101, 202, 314], np.linspace(-0.045, 0.045, 5), strict=True)
+    )
 
     plt.rcParams.update(
         {
@@ -591,7 +593,9 @@ def _plot_performance(config: BenchmarkConfig, rows: list[dict]) -> None:
     representations = list(REPRESENTATION_LABELS)
     strata = list(STRATUM_LABELS)
     x = np.arange(len(representations), dtype=float)
-    seed_jitter = dict(zip([17, 42, 101, 202, 314], np.linspace(-0.035, 0.035, 5)))
+    seed_jitter = dict(
+        zip([17, 42, 101, 202, 314], np.linspace(-0.035, 0.035, 5), strict=True)
+    )
     green = "#009E73"
 
     correlation_series = [
@@ -817,7 +821,7 @@ def _plot_losses(config: BenchmarkConfig) -> list[dict]:
     for representation_index, representation in enumerate(representations):
         for objective_index, objective in enumerate(objectives):
             ax = axes[representation_index, objective_index]
-            for seed, color in zip(seeds, seed_colors):
+            for seed, color in zip(seeds, seed_colors, strict=False):
                 job = jobs[(representation, objective, seed)]
                 history = json.loads((config.run_dir(job) / "history.json").read_text())
                 epochs = np.asarray([row["epoch"] for row in history], dtype=float)
